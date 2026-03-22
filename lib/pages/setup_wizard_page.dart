@@ -85,7 +85,11 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: ChoiceChip(
-                        label: Text(lang['name']!),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(lang['name']!, style: const TextStyle(fontSize: 13)),
+                        ),
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
                         selected: isSelected,
                         onSelected: (_) => setState(() => _selectedLang = lang['code']!),
                       ),

@@ -159,24 +159,25 @@ class _HomePageState extends State<HomePage> with WindowListener {
 
   // ==================== Permission Presets ====================
 
-  Widget _buildPermPresets() {
+  Widget _buildPermPresets(DufsService service) {
+    final running = service.isRunning;
     return Row(children: [
       Expanded(child: FilterChip(
         avatar: const Icon(Icons.visibility, size: 18), label: Text(l10n.t('home.readonly')),
         selected: _config.readonly, showCheckmark: false,
-        onSelected: (_) async { setState(() => _config.applyReadonly()); await _saveConfig(); },
+        onSelected: running ? null : (_) async { setState(() => _config.applyReadonly()); await _saveConfig(); _maybeRestart(service); },
       )),
       const SizedBox(width: 8),
       Expanded(child: FilterChip(
         avatar: const Icon(Icons.cloud_upload, size: 18), label: Text(l10n.t('home.upload')),
         selected: !_config.readonly && _config.allowUpload && !_config.allowDelete, showCheckmark: false,
-        onSelected: (_) async { setState(() => _config.applyUpload()); await _saveConfig(); },
+        onSelected: running ? null : (_) async { setState(() => _config.applyUpload()); await _saveConfig(); _maybeRestart(service); },
       )),
       const SizedBox(width: 8),
       Expanded(child: FilterChip(
         avatar: const Icon(Icons.lock_open, size: 18), label: Text(l10n.t('home.full')),
         selected: !_config.readonly && _config.allowUpload && _config.allowDelete, showCheckmark: false,
-        onSelected: (_) async { setState(() => _config.applyFull()); await _saveConfig(); },
+        onSelected: running ? null : (_) async { setState(() => _config.applyFull()); await _saveConfig(); _maybeRestart(service); },
       )),
     ]);
   }
@@ -187,35 +188,32 @@ class _HomePageState extends State<HomePage> with WindowListener {
     final running = service.isRunning;
     final items = [
       {'label': l10n.t('home.allowUpload'), 'value': _config.allowUpload, 'icon': Icons.cloud_upload,
-       'onChanged': (v) async { _config.allowUpload = v; await _saveConfig(); _maybeRestart(service); }},
+       'onChanged': (v) async { setState(() { _config.allowUpload = v; if (v) _config.readonly = false; }); await _saveConfig(); _maybeRestart(service); }},
       {'label': l10n.t('home.allowDelete'), 'value': _config.allowDelete, 'icon': Icons.delete_outline,
-       'onChanged': (v) async { _config.allowDelete = v; await _saveConfig(); _maybeRestart(service); }},
+       'onChanged': (v) async { setState(() { _config.allowDelete = v; if (v) _config.readonly = false; }); await _saveConfig(); _maybeRestart(service); }},
       {'label': l10n.t('home.allowSearch'), 'value': _config.allowSearch, 'icon': Icons.search,
-       'onChanged': (v) async { _config.allowSearch = v; await _saveConfig(); _maybeRestart(service); }},
+       'onChanged': (v) async { setState(() => _config.allowSearch = v); await _saveConfig(); _maybeRestart(service); }},
       {'label': l10n.t('home.allowArchive'), 'value': _config.allowArchive, 'icon': Icons.folder_zip,
-       'onChanged': (v) async { _config.allowArchive = v; await _saveConfig(); _maybeRestart(service); }},
+       'onChanged': (v) async { setState(() => _config.allowArchive = v); await _saveConfig(); _maybeRestart(service); }},
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: running ? Theme.of(context).colorScheme.surfaceContainerLowest : null,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           ...items.map((item) {
-            return Opacity(
-              opacity: 1.0,
-              child: SwitchListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                secondary: Icon(item['icon'] as IconData, size: 20,
-                    color: running ? Theme.of(context).colorScheme.outline : null),
-                title: Text(item['label'] as String),
-                value: item['value'] as bool,
-                onChanged: running ? null : (v) => (item['onChanged'] as Function(bool))(v),
-              ),
+            return SwitchListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              secondary: Icon(item['icon'] as IconData, size: 20,
+                  color: running ? Theme.of(context).colorScheme.outline : null),
+              title: Text(item['label'] as String),
+              value: item['value'] as bool,
+              onChanged: running ? null : (v) => (item['onChanged'] as Function(bool))(v),
             );
           }),
         ]),
@@ -460,9 +458,15 @@ class _HomePageState extends State<HomePage> with WindowListener {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(l10n.t('home.permissionPreset'), style: Theme.of(context).textTheme.titleSmall),
         ),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildPermPresets()),
-        // Custom permissions
-        _buildCustomPerms(service),
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildPermPresets(service)),
+        // Custom permissions (collapsible)
+        ExpansionTile(
+          title: Text(l10n.t('home.customPerm'), style: Theme.of(context).textTheme.titleSmall),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          initiallyExpanded: false,
+          children: [_buildCustomPerms(service)],
+        ),
         const SizedBox(height: 16),
         // Error
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildError(service)),

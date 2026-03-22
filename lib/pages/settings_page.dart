@@ -30,8 +30,8 @@ class _SettingsPageState extends State<SettingsPage> {
   AppLocalizations get l10n => AppLocalizations(widget.config.language);
 
   static const _ch = MethodChannel('com.inout.inout_flutter/native');
-  bool _storageGranted = false;
-  bool _storageChecked = false;
+  // Cache permission state across page rebuilds
+  static bool? _cachedStorageGranted;
 
   final _languages = [
     {'code': 'zh', 'name': '简体中文'},
@@ -42,22 +42,20 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _checkStorage();
+    if (_cachedStorageGranted == null) _checkStorage();
   }
 
   Future<void> _checkStorage() async {
-    if (Theme.of(context).platform != TargetPlatform.android) return;
     try {
       final granted = await _ch.invokeMethod<bool>('isStorageGranted') ?? false;
-      setState(() { _storageGranted = granted; _storageChecked = true; });
+      setState(() => _cachedStorageGranted = granted);
     } catch (_) {}
   }
 
   Future<void> _requestStorage() async {
     await _ch.invokeMethod('requestStorage');
-    // Re-check after user returns from settings
     await Future.delayed(const Duration(seconds: 2));
-    await _checkStorage();
+    _checkStorage();
   }
 
   @override
@@ -182,28 +180,44 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _storageGranted
+                color: (_cachedStorageGranted ?? false)
                     ? Colors.green.withValues(alpha: 0.08)
-                    : Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+                    : (_cachedStorageGranted == null
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(children: [
                 Icon(
-                  _storageGranted ? Icons.check_circle : Icons.warning_amber,
-                  color: _storageGranted ? Colors.green : Theme.of(context).colorScheme.error,
+                  (_cachedStorageGranted ?? false)
+                      ? Icons.check_circle
+                      : (_cachedStorageGranted == null
+                          ? Icons.hourglass_empty
+                          : Icons.warning_amber),
+                  color: (_cachedStorageGranted ?? false)
+                      ? Colors.green
+                      : (_cachedStorageGranted == null
+                          ? Theme.of(context).colorScheme.outline
+                          : Theme.of(context).colorScheme.error),
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Text(
-                  _storageGranted ? l10n.t('settings.permGranted') : l10n.t('settings.permHint'),
+                  (_cachedStorageGranted ?? false)
+                      ? l10n.t('settings.permGranted')
+                      : (_cachedStorageGranted == null
+                          ? l10n.t('settings.permChecking')
+                          : l10n.t('settings.permHint')),
                   style: Theme.of(context).textTheme.bodySmall,
                 )),
                 const SizedBox(width: 8),
-                if (!_storageGranted)
+                if (!(_cachedStorageGranted ?? false))
                   FilledButton.tonal(
-                    onPressed: _requestStorage,
-                    child: Text(l10n.t('settings.checkPerm'), style: const TextStyle(fontSize: 12)),
+                    onPressed: (_cachedStorageGranted == null) ? _checkStorage : _requestStorage,
+                    child: Text(
+                      (_cachedStorageGranted == null) ? l10n.t('settings.checkPerm') : l10n.t('settings.checkPerm'),
+                      style: const TextStyle(fontSize: 12)),
                   ),
-                if (_storageGranted)
+                if (_cachedStorageGranted ?? false)
                   IconButton(
                     icon: const Icon(Icons.refresh, size: 18),
                     onPressed: _checkStorage,
