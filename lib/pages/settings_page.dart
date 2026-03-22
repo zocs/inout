@@ -1,0 +1,228 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../l10n/app_localizations.dart';
+import '../models/server_config.dart';
+import '../app.dart' show presetColors;
+
+class SettingsPage extends StatefulWidget {
+  final ServerConfig config;
+  final VoidCallback onConfigChanged;
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
+  final ValueChanged<String> onColorChanged;
+
+  const SettingsPage({
+    super.key,
+    required this.config,
+    required this.onConfigChanged,
+    required this.themeMode,
+    required this.onThemeModeChanged,
+    required this.onColorChanged,
+  });
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  AppLocalizations get l10n => AppLocalizations(widget.config.language);
+
+  final _languages = [
+    {'code': 'zh', 'name': '简体中文'},
+    {'code': 'zhTW', 'name': '繁體中文'},
+    {'code': 'en', 'name': 'English'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 32),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // ========== About Header ==========
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+          ),
+          child: Column(children: [
+            Text('INOUT', style: GoogleFonts.pressStart2p(fontSize: 24, color: Theme.of(context).colorScheme.primary)),
+            const SizedBox(height: 12),
+            Text('v0.1.0', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),
+            const SizedBox(height: 8),
+            Text(l10n.t('about.description'), textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5)),
+            const SizedBox(height: 8),
+            Text('@zocs / inout-flutter',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500)),
+          ]),
+        ),
+
+        const Divider(height: 1),
+
+        // ========== Theme Mode (compact) ==========
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(l10n.t('settings.themeMode'),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(children: [
+            _compactTheme(ThemeMode.system, Icons.brightness_auto, l10n.t('settings.themeSystem')),
+            const SizedBox(width: 8),
+            _compactTheme(ThemeMode.light, Icons.light_mode, l10n.t('settings.themeLight')),
+            const SizedBox(width: 8),
+            _compactTheme(ThemeMode.dark, Icons.dark_mode, l10n.t('settings.themeDark')),
+          ]),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ========== Color Scheme (compact) ==========
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Row(children: [
+            Text(l10n.t('settings.colorScheme'),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary)),
+            const Spacer(),
+            ...presetColors.entries.map((entry) {
+              final sel = widget.config.colorScheme == entry.key;
+              return Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => widget.config.colorScheme = entry.key);
+                    widget.config.save();
+                    widget.onColorChanged(entry.key);
+                  },
+                  child: Container(
+                    width: sel ? 32 : 28, height: sel ? 32 : 28,
+                    decoration: BoxDecoration(
+                      color: entry.value, shape: BoxShape.circle,
+                      border: sel ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2) : null,
+                    ),
+                    child: sel ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+                  ),
+                ),
+              );
+            }),
+          ]),
+        ),
+
+        const Divider(height: 24),
+
+        // ========== Language ==========
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          child: Text(l10n.t('settings.language'),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary)),
+        ),
+        ..._languages.map((lang) {
+          final sel = widget.config.language == lang['code'];
+          return ListTile(
+            dense: true,
+            title: Text(lang['name']!),
+            trailing: sel ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+            onTap: () async {
+              setState(() => widget.config.language = lang['code']!);
+              await widget.config.save();
+              widget.onConfigChanged();
+            },
+          );
+        }),
+
+        const Divider(height: 24),
+
+        // ========== Help ==========
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          child: Text(l10n.t('settings.help'),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _helpStep(context, '1', l10n.t('help.step1')),
+              _helpStep(context, '2', l10n.t('help.step2')),
+              _helpStep(context, '3', l10n.t('help.step3')),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.info_outline, size: 16, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(l10n.t('help.tip'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
+                ]),
+              ),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _compactTheme(ThemeMode mode, IconData icon, String label) {
+    final sel = widget.themeMode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          widget.onThemeModeChanged(mode);
+          widget.config.themeMode = mode.name;
+          widget.config.save();
+          setState(() {});
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: sel ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+              width: sel ? 2 : 1,
+            ),
+            color: sel ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1) : null,
+          ),
+          child: Column(children: [
+            Icon(icon, size: 20, color: sel ? Theme.of(context).colorScheme.primary : null),
+            const SizedBox(height: 2),
+            Text(label, style: TextStyle(fontSize: 11, color: sel ? Theme.of(context).colorScheme.primary : null)),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _helpStep(BuildContext context, String num, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 20, height: 20,
+          decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
+          child: Center(child: Text(num, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onPrimary))),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
+      ]),
+    );
+  }
+}
