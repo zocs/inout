@@ -16,9 +16,15 @@ A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero 
 
 ---
 
-## ✨ Features
+## ✨ Why inout?
 
-| | |
+> **The other side doesn't need an app.** Just install inout on ONE device, start the server, and anyone with a browser can access and transfer files — no apps, no accounts, no setup.
+
+- 📱 **One device is enough** — the rest use a browser
+- ⬆️⬇️ **Bidirectional** — upload AND download, not just send
+- 🔗 **Just open a link** — QR code or URL, that's all the other side needs
+
+| Feature | |
 |:---:|:---:|
 | 📂 **Pick & Share** | Select any folder, one tap to start sharing |
 | 📱 **Scan to Connect** | QR code for instant access from any device |
