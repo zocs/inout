@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -151,59 +151,6 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
 
         const Divider(height: 24),
-
-        // ========== Theme Mode (compact) ==========
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text(l10n.t('settings.themeMode'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(children: [
-            _compactTheme(ThemeMode.system, Icons.brightness_auto, l10n.t('settings.themeSystem')),
-            const SizedBox(width: 8),
-            _compactTheme(ThemeMode.light, Icons.light_mode, l10n.t('settings.themeLight')),
-            const SizedBox(width: 8),
-            _compactTheme(ThemeMode.dark, Icons.dark_mode, l10n.t('settings.themeDark')),
-          ]),
-        ),
-
-        const SizedBox(height: 16),
-
-        // ========== Color Scheme (compact) ==========
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Row(children: [
-            Text(l10n.t('settings.colorScheme'),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary)),
-            const Spacer(),
-            ...presetColors.entries.map((entry) {
-              final sel = widget.config.colorScheme == entry.key;
-              return Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => widget.config.colorScheme = entry.key);
-                    widget.config.save();
-                    widget.onColorChanged(entry.key);
-                  },
-                  child: Container(
-                    width: sel ? 32 : 28, height: sel ? 32 : 28,
-                    decoration: BoxDecoration(
-                      color: entry.value, shape: BoxShape.circle,
-                      border: sel ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2) : null,
-                    ),
-                    child: sel ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
-                  ),
-                ),
-              );
-            }),
-          ]),
-        ),
-
         const Divider(height: 24),
 
         // ========== Storage Permission (Android) ==========
@@ -267,6 +214,60 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const Divider(height: 24),
         ],
+
+        // ========== Theme Mode (compact) ==========
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(l10n.t('settings.themeMode'),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(children: [
+            _compactTheme(ThemeMode.system, Icons.brightness_auto, l10n.t('settings.themeSystem')),
+            const SizedBox(width: 8),
+            _compactTheme(ThemeMode.light, Icons.light_mode, l10n.t('settings.themeLight')),
+            const SizedBox(width: 8),
+            _compactTheme(ThemeMode.dark, Icons.dark_mode, l10n.t('settings.themeDark')),
+          ]),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ========== Color Scheme (compact) ==========
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Row(children: [
+            Text(l10n.t('settings.colorScheme'),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary)),
+            const Spacer(),
+            ...presetColors.entries.map((entry) {
+              final sel = widget.config.colorScheme == entry.key;
+              return Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => widget.config.colorScheme = entry.key);
+                    widget.config.save();
+                    widget.onColorChanged(entry.key);
+                  },
+                  child: Container(
+                    width: sel ? 32 : 28, height: sel ? 32 : 28,
+                    decoration: BoxDecoration(
+                      color: entry.value, shape: BoxShape.circle,
+                      border: sel ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2) : null,
+                    ),
+                    child: sel ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+                  ),
+                ),
+              );
+            }),
+          ]),
+        ),
+
+
 
         // ========== Language ==========
         Padding(

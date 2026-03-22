@@ -68,7 +68,7 @@ class AppLocalizations {
       'help.step1': '点击「选择分享目录」，选好你想分享的文件夹',
       'help.step2': '按下「启动服务」，等待绿色指示灯亮起',
       'help.step3': '用手机或其他设备扫描二维码，即可上传和下载文件',
-      'help.tip': '目前仅测试了局域网传输。ZeroTier、Tailscale、EasyTier 等组网工具也可使用，但请优先使用本地局域网（LAN/WLAN），需要传输的设备连接同一网络可获得最佳体验。',
+      'help.tip': '目前仅测试了局域网（含热点局域网）传输。ZeroTier、Tailscale、EasyTier 等组网工具也可使用，但请优先使用本地局域网（LAN/WLAN），需要传输的设备连接同一网络可获得最佳体验。',
     },
     'en': {
       'app.name': 'inout',
@@ -130,7 +130,7 @@ class AppLocalizations {
       'help.step1': 'Tap "Select Share Directory" and choose the folder you want to share',
       'help.step2': 'Press "Start Server" and wait for the green indicator',
       'help.step3': 'Scan the QR code with your phone or other device to upload and download files',
-      'help.tip': 'Currently tested only for LAN transfer. Network tools like ZeroTier, Tailscale, and EasyTier also work, but for the best experience, use a local network (LAN/WLAN) and connect all devices to the same network.',
+      'help.tip': 'Currently tested only for LAN (including hotspot LAN) transfer. Network tools like ZeroTier, Tailscale, and EasyTier also work, but for the best experience, use a local network (LAN/WLAN) and connect all devices to the same network.',
     },
     'zhTW': {
       'app.name': 'inout',
@@ -141,7 +141,7 @@ class AppLocalizations {
       'home.selectedDir': '已選目錄',
       'home.permissionPreset': '權限預設',
       'home.customPerm': '自訂權限',
-      'home.readonly': '唯讀',
+      'home.readonly': '僅瀏覽',
       'home.upload': '可上傳',
       'home.full': '完全',
       'home.allowUpload': '允許上傳',
@@ -192,7 +192,7 @@ class AppLocalizations {
       'help.step1': '點擊「選擇分享目錄」，選好你想分享的資料夾',
       'help.step2': '按下「啟動服務」，等待綠色指示燈亮起',
       'help.step3': '用手機或其他裝置掃描 QR 碼，即可上傳和下載檔案',
-      'help.tip': '目前僅測試了區域網路傳輸。ZeroTier、Tailscale、EasyTier 等組網工具也可使用，但請優先使用本地區域網路（LAN/WLAN），需要傳輸的裝置連接同一網路可獲得最佳體驗。',
+      'help.tip': '目前僅測試了區域網路（含熱點區域網路）傳輸。ZeroTier、Tailscale、EasyTier 等組網工具也可使用，但請優先使用本地區域網路（LAN/WLAN），需要傳輸的裝置連接同一網路可獲得最佳體驗。',
     },
   };
 }
