@@ -1,4 +1,5 @@
 ; inout.nsi - NSIS Installer Script for inout
+Unicode true
 !define APP_NAME "inout"
 !define APP_VERSION "0.1.0"
 !define APP_PUBLISHER "zocs"
