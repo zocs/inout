@@ -1,5 +1,7 @@
 ; inout.nsi - NSIS Installer Script for inout
 Unicode true
+SetCompressor /SOLID lzma
+
 !define APP_NAME "inout"
 !define APP_VERSION "0.1.0"
 !define APP_PUBLISHER "zocs"
@@ -14,10 +16,13 @@ OutFile "inout-${APP_VERSION}-windows-x64-setup.exe"
 InstallDir "$PROGRAMFILES64\${APP_NAME}"
 RequestExecutionLevel admin
 
+; Custom finish page run text (will be shown in system language)
+!define MUI_FINISHPAGE_RUN_TEXT "Run ${APP_NAME}"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\${APP_EXE}"
+
+; Pages
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
-!define MUI_FINISHPAGE_RUN "$INSTDIR\${APP_EXE}"
-!define MUI_FINISHPAGE_RUN_TEXT "运行 ${APP_NAME}"
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
