@@ -45,13 +45,11 @@
 
 ## 🌐 网络
 
-> **最佳体验：** 将所有设备连接到同一局域网（LAN / WiFi）
+> **最简单的方式：** 所有设备连同一个 WiFi 或手机热点。
 
-也支持：
-- [ZeroTier](https://www.zerotier.com/)
-- [Tailscale](https://tailscale.com/)
-- [EasyTier](https://github.com/EasyTier/EasyTier)
-- 任何 VPN 或组网工具
+- 🏠 **同一 WiFi** — 连上就能传
+- 📱 **手机热点** — 没有路由器？一台手机开热点，其他设备加入就能用
+- 🌍 **远程访问** — 支持 ZeroTier、Tailscale、EasyTier 等组网工具
 
 > 🔒 所有传输直接在设备之间进行，不经过任何第三方服务器。
 

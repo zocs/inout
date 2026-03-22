@@ -45,13 +45,11 @@ A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero 
 
 ## 🌐 Network
 
-> **Best experience:** Connect all devices to the same local network (LAN / WiFi)
+> **Simplest setup:** All devices on the same WiFi or hotspot.
 
-Also works with:
-- [ZeroTier](https://www.zerotier.com/)
-- [Tailscale](https://tailscale.com/)
-- [EasyTier](https://github.com/EasyTier/EasyTier)
-- Any VPN or mesh network
+- 🏠 **Same WiFi** — just connect and share
+- 📱 **Phone hotspot** — one device creates a hotspot, others join, no router needed
+- 🌍 **Remote access** — works with ZeroTier, Tailscale, EasyTier, or any VPN
 
 > 🔒 All transfers happen directly between your devices. No data passes through third-party servers.
 
