@@ -278,24 +278,24 @@ class _HomePageState extends State<HomePage> with WindowListener {
     return Card(
       color: Theme.of(context).colorScheme.primaryContainer,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12),
         child: Column(children: [
           // Status dot
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(width: 10, height: 10, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
-            const SizedBox(width: 8),
+            Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+            const SizedBox(width: 6),
             Text(l10n.t('home.running'),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: Theme.of(context).colorScheme.onPrimaryContainer)),
           ]),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           // QR Code
           Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-            child: QrImageView(data: service.serverUrl!, version: QrVersions.auto, size: 180, backgroundColor: Colors.white),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+            child: QrImageView(data: service.serverUrl!, version: QrVersions.auto, size: 140, backgroundColor: Colors.white),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           // URL (tap to copy)
           InkWell(
             onTap: () {
@@ -304,27 +304,27 @@ class _HomePageState extends State<HomePage> with WindowListener {
             },
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Flexible(child: Text(service.serverUrl!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                       decoration: TextDecoration.underline),
                   overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 4),
-              Icon(Icons.copy, size: 16, color: Theme.of(context).colorScheme.onPrimaryContainer),
+              Icon(Icons.copy, size: 14, color: Theme.of(context).colorScheme.onPrimaryContainer),
             ]),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           // IP + Hint
           Text('${l10n.t('home.localIp')}: ${service.localIp ?? 'N/A'}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7))),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(l10n.t('home.scanHint'),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7))),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           // Stats
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(8),
@@ -433,11 +433,11 @@ class _HomePageState extends State<HomePage> with WindowListener {
   Widget _buildHomeContent() {
     final service = context.watch<DufsService>();
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // Title
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
           child: Column(children: [
             Text(l10n.t('app.name'),
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -449,10 +449,10 @@ class _HomePageState extends State<HomePage> with WindowListener {
         ),
         // Preset dirs (Android)
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildPresetDirs()),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         // Dir picker
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildDirPicker()),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         // Permission presets
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -463,21 +463,21 @@ class _HomePageState extends State<HomePage> with WindowListener {
         ExpansionTile(
           title: Text(l10n.t('home.customPerm'), style: Theme.of(context).textTheme.titleSmall),
           tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
           initiallyExpanded: false,
           clipBehavior: Clip.hardEdge,
           children: [_buildCustomPerms(service)],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 4),
         // Error
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildError(service)),
-        if (service.error != null) const SizedBox(height: 8),
+        if (service.error != null) const SizedBox(height: 4),
         // Start/Stop
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildControlButton(service)),
         // Restart hint
         if (!service.isRunning)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -492,7 +492,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
         const SizedBox(height: 8),
         // Running card (QR) - appears between button and advanced
         _buildRunningCard(service),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         // Advanced options (always at bottom)
         ExpansionTile(
           title: Text(l10n.t('home.advanced')),
