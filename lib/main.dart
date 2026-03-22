@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
@@ -8,19 +9,21 @@ import 'services/dufs_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Windows: frameless window
-  await windowManager.ensureInitialized();
-  const windowOptions = WindowOptions(
-    size: Size(420, 740),
-    minimumSize: Size(360, 600),
-    backgroundColor: Colors.transparent,
-    skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.hidden,
-  );
-  await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+  // Windows: frameless window (not available on mobile)
+  if (Platform.isWindows) {
+    await windowManager.ensureInitialized();
+    const windowOptions = WindowOptions(
+      size: Size(420, 740),
+      minimumSize: Size(360, 600),
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.hidden,
+    );
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
 
   final config = await ServerConfig.load();
 
