@@ -38,12 +38,11 @@ A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero 
 
 ## 🚀 Quick Start
 
-```
-1. Pick a folder
-2. Tap "Start Server"
-3. Scan QR code or enter URL in browser (port required)
-4. Share files — that's it!
-```
+1. [Download](https://github.com/zocs/inout/releases/latest) the latest release
+2. Pick a folder
+3. Tap "Start Server"
+4. Scan QR code or enter URL in browser (port required)
+5. Share files — that's it!
 
 ## 🌐 Network
 
