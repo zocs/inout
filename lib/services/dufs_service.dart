@@ -59,17 +59,16 @@ class DufsService extends ChangeNotifier {
       _error = null; notifyListeners();
       if (Platform.isWindows) {
         await _startDufs(config);
-      } else {
-        // Check MANAGE_EXTERNAL_STORAGE on Android
-        if (Platform.isAndroid) {
-          final granted = await _ch.invokeMethod<bool>('isStorageGranted') ?? false;
-          _log('MANAGE_EXTERNAL_STORAGE granted: $granted');
-          if (!granted) {
-            _error = '需要开启"所有文件访问权限"才能正常列出文件。请在系统设置中开启后重试。';
-            notifyListeners();
-            await _ch.invokeMethod('requestStorage');
-            return;
-          }
+      } else if (Platform.isLinux) {
+        await _startDufsLinux(config);
+      } else if (Platform.isAndroid) {
+        final granted = await _ch.invokeMethod<bool>('isStorageGranted') ?? false;
+        _log('MANAGE_EXTERNAL_STORAGE granted: $granted');
+        if (!granted) {
+          _error = '需要开启"所有文件访问权限"才能正常列出文件。请在系统设置中开启后重试。';
+          notifyListeners();
+          await _ch.invokeMethod('requestStorage');
+          return;
         }
         await _startDufsAndroid(config);
       }
@@ -107,6 +106,34 @@ class DufsService extends ChangeNotifier {
     _process!.stdout.listen((d) => _log('out: ${String.fromCharCodes(d).trim()}'));
     _process!.stderr.listen((d) => _log('err: ${String.fromCharCodes(d).trim()}'));
     await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  // ==================== Linux: dufs binary ====================
+  Future<void> _startDufsLinux(ServerConfig config) async {
+    // dufs binary is placed next to the executable by the build script
+    final exeDir = File(Platform.resolvedExecutable).parent.path;
+    final binPath = p.join(exeDir, 'dufs');
+    _log('linux dufs: $binPath exists=${await File(binPath).exists()}');
+    if (await File(binPath).exists()) {
+      final args = <String>['-b', '0.0.0.0', '-p', '${config.port}'];
+      if (!config.readonly) {
+        if (config.allowUpload) args.add('--allow-upload');
+        if (config.allowDelete) args.add('--allow-delete');
+        if (config.allowSearch) args.add('--allow-search');
+        if (config.allowArchive) args.add('--allow-archive');
+      }
+      if (config.auth != null && config.auth!.isNotEmpty) args.addAll(['--auth', '${config.auth!}@/:rw']);
+      if (config.cors) args.add('--enable-cors');
+      args.add(config.path);
+      _log('dufs: $binPath ${args.join(' ')}');
+      _process = await Process.start(binPath, args);
+      _process!.stdout.listen((d) => _log('dufs: ${String.fromCharCodes(d).trim()}'));
+      _process!.stderr.listen((d) => _log('dufs ERR: ${String.fromCharCodes(d).trim()}'));
+      await Future.delayed(const Duration(milliseconds: 300));
+    } else {
+      _log('ERROR: $binPath not found!');
+      throw Exception('dufs binary not found at $binPath');
+    }
   }
 
   // ==================== Android: dufs binary ====================
