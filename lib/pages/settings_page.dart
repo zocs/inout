@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
@@ -28,11 +29,36 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   AppLocalizations get l10n => AppLocalizations(widget.config.language);
 
+  static const _ch = MethodChannel('com.inout.inout_flutter/native');
+  bool _storageGranted = false;
+  bool _storageChecked = false;
+
   final _languages = [
     {'code': 'zh', 'name': '简体中文'},
     {'code': 'zhTW', 'name': '繁體中文'},
     {'code': 'en', 'name': 'English'},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkStorage();
+  }
+
+  Future<void> _checkStorage() async {
+    if (Theme.of(context).platform != TargetPlatform.android) return;
+    try {
+      final granted = await _ch.invokeMethod<bool>('isStorageGranted') ?? false;
+      setState(() { _storageGranted = granted; _storageChecked = true; });
+    } catch (_) {}
+  }
+
+  Future<void> _requestStorage() async {
+    await _ch.invokeMethod('requestStorage');
+    // Re-check after user returns from settings
+    await Future.delayed(const Duration(seconds: 2));
+    await _checkStorage();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +168,52 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
 
         const Divider(height: 24),
+
+        // ========== Storage Permission (Android) ==========
+        if (Theme.of(context).platform == TargetPlatform.android) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(l10n.t('settings.permissions'),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary)),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _storageGranted
+                    ? Colors.green.withValues(alpha: 0.08)
+                    : Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                Icon(
+                  _storageGranted ? Icons.check_circle : Icons.warning_amber,
+                  color: _storageGranted ? Colors.green : Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Text(
+                  _storageGranted ? l10n.t('settings.permGranted') : l10n.t('settings.permHint'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                )),
+                const SizedBox(width: 8),
+                if (!_storageGranted)
+                  FilledButton.tonal(
+                    onPressed: _requestStorage,
+                    child: Text(l10n.t('settings.checkPerm'), style: const TextStyle(fontSize: 12)),
+                  ),
+                if (_storageGranted)
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 18),
+                    onPressed: _checkStorage,
+                    tooltip: l10n.t('settings.checkPerm'),
+                  ),
+              ]),
+            ),
+          ),
+          const Divider(height: 24),
+        ],
 
         // ========== Language ==========
         Padding(

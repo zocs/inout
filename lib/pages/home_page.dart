@@ -181,6 +181,76 @@ class _HomePageState extends State<HomePage> with WindowListener {
     ]);
   }
 
+  // ==================== Custom Permissions ====================
+
+  Widget _buildCustomPerms(DufsService service) {
+    final running = service.isRunning;
+    final items = [
+      {'label': l10n.t('home.allowUpload'), 'value': _config.allowUpload, 'icon': Icons.cloud_upload,
+       'onChanged': (v) async { _config.allowUpload = v; await _saveConfig(); _maybeRestart(service); }},
+      {'label': l10n.t('home.allowDelete'), 'value': _config.allowDelete, 'icon': Icons.delete_outline,
+       'onChanged': (v) async { _config.allowDelete = v; await _saveConfig(); _maybeRestart(service); }},
+      {'label': l10n.t('home.allowSearch'), 'value': _config.allowSearch, 'icon': Icons.search,
+       'onChanged': (v) async { _config.allowSearch = v; await _saveConfig(); _maybeRestart(service); }},
+      {'label': l10n.t('home.allowArchive'), 'value': _config.allowArchive, 'icon': Icons.folder_zip,
+       'onChanged': (v) async { _config.allowArchive = v; await _saveConfig(); _maybeRestart(service); }},
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: running ? Theme.of(context).colorScheme.surfaceContainerLowest : null,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ...items.map((item) {
+            return Opacity(
+              opacity: 1.0,
+              child: SwitchListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                secondary: Icon(item['icon'] as IconData, size: 20,
+                    color: running ? Theme.of(context).colorScheme.outline : null),
+                title: Text(item['label'] as String),
+                value: item['value'] as bool,
+                onChanged: running ? null : (v) => (item['onChanged'] as Function(bool))(v),
+              ),
+            );
+          }),
+        ]),
+      ),
+    );
+  }
+
+  /// Auto-restart if running with no active connections
+  Future<void> _maybeRestart(DufsService service) async {
+    if (!service.isRunning) return;
+    final hasConnections = service.totalRequests > 0 && service.lastActivity != null;
+    if (hasConnections) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.t('perm.restartTitle')),
+          content: Text(l10n.t('perm.restartMsg')),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel)),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.t('perm.restart'))),
+          ],
+        ),
+      );
+      if (confirmed == true) await _restartServer(service);
+    } else {
+      await _restartServer(service);
+    }
+  }
+
+  Future<void> _restartServer(DufsService service) async {
+    await service.stopServer();
+    await _saveConfig();
+    await service.startServer(_config);
+  }
+
   // ==================== Start/Stop Button ====================
 
   Widget _buildControlButton(DufsService service) {
@@ -391,6 +461,8 @@ class _HomePageState extends State<HomePage> with WindowListener {
           child: Text(l10n.t('home.permissionPreset'), style: Theme.of(context).textTheme.titleSmall),
         ),
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildPermPresets()),
+        // Custom permissions
+        _buildCustomPerms(service),
         const SizedBox(height: 16),
         // Error
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildError(service)),
@@ -448,9 +520,18 @@ class _HomePageState extends State<HomePage> with WindowListener {
           if (Theme.of(context).platform == TargetPlatform.windows) _buildTitleBar(),
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 180),
               transitionBuilder: (child, animation) {
-                return FadeTransition(opacity: animation, child: child);
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.03, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  ),
+                );
               },
               child: KeyedSubtree(
                 key: ValueKey(_navIndex),
