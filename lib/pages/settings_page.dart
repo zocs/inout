@@ -59,6 +59,25 @@ class _SettingsPageState extends State<SettingsPage> {
             Text('@zocs / inout-flutter',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 12),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              TextButton.icon(
+                icon: const Icon(Icons.privacy_tip_outlined, size: 16),
+                label: Text(l10n.t('about.privacy'), style: const TextStyle(fontSize: 12)),
+                onPressed: () => _showPrivacyPolicy(context),
+              ),
+              const SizedBox(width: 12),
+              TextButton.icon(
+                icon: const Icon(Icons.article_outlined, size: 16),
+                label: Text(l10n.t('about.license'), style: const TextStyle(fontSize: 12)),
+                onPressed: () => showLicensePage(
+                  context: context,
+                  applicationName: 'inout',
+                  applicationVersion: 'v0.1.0',
+                  applicationLegalese: 'Copyright (c) 2026 zocs\nMIT License',
+                ),
+              ),
+            ]),
           ]),
         ),
 
@@ -223,6 +242,26 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(width: 8),
         Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
       ]),
+    );
+  }
+
+  void _showPrivacyPolicy(BuildContext context) {
+    final l10n = AppLocalizations(widget.config.language);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(children: [
+          const Icon(Icons.privacy_tip_outlined, size: 20),
+          const SizedBox(width: 8),
+          Text(l10n.t('about.privacy')),
+        ]),
+        content: SingleChildScrollView(
+          child: Text(l10n.t('privacy.content'), style: const TextStyle(height: 1.6)),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(MaterialLocalizations.of(ctx).okButtonLabel)),
+        ],
+      ),
     );
   }
 }
