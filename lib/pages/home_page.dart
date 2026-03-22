@@ -387,7 +387,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
           decoration: InputDecoration(
             labelText: l10n.t('home.port'),
             prefixIcon: const Icon(Icons.numbers),
-            helperText: '1-65535',
+            helperText: l10n.t('home.portHint'),
           ),
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
