@@ -66,6 +66,10 @@ class _HomePageState extends State<HomePage> with WindowListener {
     } else {
       _config.auth = null;
     }
+    // Validate: auth requires both username and password
+    if (_enableAuth && _config.auth == null) {
+      _enableAuth = false;
+    }
     await _config.save();
   }
 
@@ -188,9 +192,9 @@ class _HomePageState extends State<HomePage> with WindowListener {
     final running = service.isRunning;
     final items = [
       {'label': l10n.t('home.allowUpload'), 'value': _config.allowUpload, 'icon': Icons.cloud_upload,
-       'onChanged': (v) async { setState(() { _config.allowUpload = v; if (v) _config.readonly = false; }); await _saveConfig(); _maybeRestart(service); }},
+       'onChanged': (v) async { setState(() { _config.allowUpload = v; if (v) { _config.readonly = false; _config.allowSearch = true; } }); await _saveConfig(); _maybeRestart(service); }},
       {'label': l10n.t('home.allowDelete'), 'value': _config.allowDelete, 'icon': Icons.delete_outline,
-       'onChanged': (v) async { setState(() { _config.allowDelete = v; if (v) _config.readonly = false; }); await _saveConfig(); _maybeRestart(service); }},
+       'onChanged': (v) async { setState(() { _config.allowDelete = v; if (v) { _config.readonly = false; _config.allowSearch = true; } }); await _saveConfig(); _maybeRestart(service); }},
       {'label': l10n.t('home.allowSearch'), 'value': _config.allowSearch, 'icon': Icons.search,
        'onChanged': (v) async { setState(() => _config.allowSearch = v); await _saveConfig(); _maybeRestart(service); }},
       {'label': l10n.t('home.allowArchive'), 'value': _config.allowArchive, 'icon': Icons.folder_zip,
@@ -380,13 +384,20 @@ class _HomePageState extends State<HomePage> with WindowListener {
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: TextField(
-          decoration: InputDecoration(labelText: l10n.t('home.port'), prefixIcon: const Icon(Icons.numbers)),
+          decoration: InputDecoration(
+            labelText: l10n.t('home.port'),
+            prefixIcon: const Icon(Icons.numbers),
+            helperText: '1-65535',
+          ),
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           controller: TextEditingController(text: _config.port.toString()),
           onChanged: (v) async {
             final port = int.tryParse(v);
-            if (port != null && port > 0 && port <= 65535) { _config.port = port; await _saveConfig(); }
+            if (port != null && port >= 1 && port <= 65535) {
+              _config.port = port;
+              await _saveConfig();
+            }
           },
         ),
       ),

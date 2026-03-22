@@ -55,7 +55,7 @@ class DufsService extends ChangeNotifier {
             return;
           }
         }
-        await _startDart(config);
+        await _startDufsAndroid(config);
       }
       _isRunning = true;
       _localIp = await _getWifiIP();
@@ -94,8 +94,7 @@ class DufsService extends ChangeNotifier {
   }
 
   // ==================== Android: dufs binary ====================
-  Future<void> _startDart(ServerConfig config) async {
-    // Try dufs binary from jniLibs
+  Future<void> _startDufsAndroid(ServerConfig config) async {
     final nativeDir = await _ch.invokeMethod<String>('getNativeLibraryDir');
     _log('nativeLibraryDir: $nativeDir');
     final binPath = '$nativeDir/libdufs.so';
@@ -130,5 +129,15 @@ class DufsService extends ChangeNotifier {
   }
 
   @override
-  void dispose() { stopServer(); super.dispose(); }
+  void dispose() {
+    // Synchronous cleanup — don't await in dispose
+    try { _process?.kill(); } catch (_) {}
+    _process = null;
+    if (_server != null) {
+      _server!.close(force: true).catchError((_) {});
+      _server = null;
+    }
+    _isRunning = false;
+    super.dispose();
+  }
 }

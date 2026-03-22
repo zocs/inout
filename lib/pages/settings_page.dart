@@ -42,7 +42,9 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    if (_cachedStorageGranted == null) _checkStorage();
+    // Reset static cache on each app lifecycle start
+    _cachedStorageGranted = null;
+    _checkStorage();
   }
 
   Future<void> _checkStorage() async {
