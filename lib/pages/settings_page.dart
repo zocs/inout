@@ -146,6 +146,20 @@ class _SettingsPageState extends State<SettingsPage> {
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
                 ]),
               ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.pinkAccent.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.favorite, size: 16, color: Colors.pink),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(l10n.t('help.tip2'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
+                ]),
+              ),
             ]),
           ),
         ),
