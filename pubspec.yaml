@@ -46,6 +46,7 @@ dependencies:
   window_manager: ^0.5.1
   dynamic_color: ^1.8.1
   google_fonts: ^8.0.2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../models/server_config.dart';
 import '../app.dart' show presetColors;
@@ -56,9 +57,14 @@ class _SettingsPageState extends State<SettingsPage> {
             Text(l10n.t('about.description'), textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5)),
             const SizedBox(height: 8),
-            Text('@zocs / inout-flutter',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500)),
+            GestureDetector(
+              onTap: () => launchUrl(Uri.parse('https://github.com/zocs/inout'), mode: LaunchMode.externalApplication),
+              child: Text('github.com/zocs/inout',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline)),
+            ),
             const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               TextButton.icon(
