@@ -1,68 +1,99 @@
-# inout
+<div align="center">
+
+# 📦 inout
 
 **轻点一下，文件分享即刻在线。**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter)](https://flutter.dev)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20macOS%20%7C%20iOS-lightgrey)]()
+
 基于开源项目 [dufs](https://github.com/sigoden/dufs) 开发的图形界面版本，让文件分享零配置、零门槛。
 
-[English](README.md)
+[English](README.md) · [隐私政策](PRIVACY.md)
 
-## 功能
+</div>
 
-- 📱 选好目录，一键开启 HTTP 文件服务
-- 📷 生成二维码，手机扫码即可访问
-- ⬆️ 支持上传、下载、搜索、打包下载
-- 🔐 可选用户名密码认证
-- 🎨 6 种配色方案 + 深色/浅色模式
-- 🌐 简体中文 / 繁體中文 / English
-- 📦 零依赖，内置 dufs 二进制
+---
 
-## 使用方法
+## ✨ 功能
 
+| | |
+|:---:|:---:|
+| 📂 **选好就分享** | 选择任意文件夹，一键开启文件服务 |
+| 📱 **扫码即连接** | 生成二维码，其他设备扫码即可访问 |
+| ⬆️⬇️ **完整控制** | 上传、下载、搜索、打包下载 |
+| 🔐 **安全可选** | 用户名密码认证，CORS 控制 |
+| 🎨 **自由配色** | 6 种配色方案 + 深色/浅色模式 |
+| 🌐 **多语言** | 简体中文 · 繁體中文 · English |
+| 📦 **零依赖** | 自包含，无需额外安装任何东西 |
+
+## 🚀 快速开始
+
+```
 1. 选择要分享的文件夹
 2. 点击「启动服务」
-3. 其他设备扫描二维码或输入地址
-4. 开始上传/下载文件
+3. 其他设备扫描二维码
+4. 开始传文件 — 就这么简单！
+```
 
-## 网络说明
+## 🌐 网络
 
-- 优先使用局域网（LAN / WLAN），连接同一网络获得最佳体验
-- 支持 ZeroTier、Tailscale、EasyTier 等组网工具
-- 文件传输直接在设备之间进行，不经过第三方服务器
+> **最佳体验：** 将所有设备连接到同一局域网（LAN / WiFi）
 
-## 平台
+也支持：
+- [ZeroTier](https://www.zerotier.com/)
+- [Tailscale](https://tailscale.com/)
+- [EasyTier](https://github.com/EasyTier/EasyTier)
+- 任何 VPN 或组网工具
+
+> 🔒 所有传输直接在设备之间进行，不经过任何第三方服务器。
+
+## 📱 平台支持
 
 | 平台 | 状态 |
-|------|------|
-| Windows | ✅ 已测试 |
-| Android | 🔜 测试中 |
-| macOS | 📋 计划中 |
-| iOS | 📋 计划中 |
-| Linux | 📋 计划中 |
+|:----:|:----:|
+| 🪟 Windows | ✅ 已测试 |
+| 🤖 Android | 🔜 测试中 |
+| 🍎 macOS | 📋 计划中 |
+| 🍏 iOS | 📋 计划中 |
+| 🐧 Linux | 📋 计划中 |
 
-## 构建
+## 🛠️ 构建
 
 ```bash
+# 克隆
+git clone https://github.com/zocs/inout.git
+cd inout
+
+# 安装依赖
 flutter pub get
-flutter run -d windows    # Windows 调试
-flutter run -d android    # Android 调试
+
+# 运行
+flutter run -d windows    # Windows
+flutter run -d android    # Android
+
+# 构建
 flutter build windows --debug
 flutter build apk --debug
 ```
 
-## 技术栈
+## 🧱 技术栈
 
-- Flutter 3.41 + Dart
-- [dufs](https://github.com/sigoden/dufs) v0.45.0（Rust 编写的静态文件服务器）
-- Material Design 3
+| 组件 | 技术 |
+|------|------|
+| 框架 | [Flutter](https://flutter.dev) 3.41 + Dart |
+| 文件服务 | [dufs](https://github.com/sigoden/dufs) v0.45.0 (Rust) |
+| 设计 | Material Design 3 |
 
-## 隐私
+## 📄 许可证
 
-inout 不收集、存储或传输任何个人数据。文件传输在本地设备之间直接进行。详见 [PRIVACY.md](PRIVACY.md)。
-
-## 许可证
-
-[MIT License](LICENSE)
+[MIT](LICENSE) © 2026 [zocs](https://github.com/zocs)
 
 ---
 
-*inout — 让文件来去自如。*
+<div align="center">
+
+**[inout](https://github.com/zocs/inout)** — 让文件来去自如。
+
+</div>
