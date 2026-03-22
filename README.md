@@ -7,10 +7,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows-lightgrey)]()
+[![Privacy](https://img.shields.io/badge/Privacy-Policy-green.svg)](PRIVACY.md)
 
 A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero configuration, zero barrier.
 
-[中文文档](README_zh.md) · [Privacy Policy](PRIVACY.md)
+[中文文档](README_zh.md)
 
 </div>
 
