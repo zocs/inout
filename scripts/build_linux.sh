@@ -21,7 +21,9 @@ chmod +x "assets/dufs/dufs-linux-${ARCH}"
 # Build Flutter Linux
 flutter build linux --release
 
-BUILD_DIR="build/linux/${ARCH}/release/bundle"
+# Flutter outputs to build/linux/{x64|arm64}/release/bundle
+FLUTTER_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x64")
+BUILD_DIR="build/linux/${FLUTTER_ARCH}/release/bundle"
 OUTPUT_DIR="build/linux/output"
 mkdir -p "$OUTPUT_DIR"
 
