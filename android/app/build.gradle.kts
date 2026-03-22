@@ -31,6 +31,12 @@ android {
         release {
             signingConfig = signingConfigs.getByName("debug")
         }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
     }
 }
 
