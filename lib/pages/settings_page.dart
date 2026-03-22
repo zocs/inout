@@ -113,6 +113,45 @@ class _SettingsPageState extends State<SettingsPage> {
 
         const Divider(height: 1),
 
+        // ========== Help ==========
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(l10n.t('settings.help'),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _helpStep(context, '1', l10n.t('help.step1')),
+              _helpStep(context, '2', l10n.t('help.step2')),
+              _helpStep(context, '3', l10n.t('help.step3')),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.info_outline, size: 16, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(l10n.t('help.tip'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
+                ]),
+              ),
+            ]),
+          ),
+        ),
+
+        const Divider(height: 24),
+
         // ========== Theme Mode (compact) ==========
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -250,44 +289,7 @@ class _SettingsPageState extends State<SettingsPage> {
           );
         }),
 
-        const Divider(height: 24),
 
-        // ========== Help ==========
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-          child: Text(l10n.t('settings.help'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _helpStep(context, '1', l10n.t('help.step1')),
-              _helpStep(context, '2', l10n.t('help.step2')),
-              _helpStep(context, '3', l10n.t('help.step3')),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.info_outline, size: 16, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(l10n.t('help.tip'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
-                ]),
-              ),
-            ]),
-          ),
-        ),
       ]),
     );
   }

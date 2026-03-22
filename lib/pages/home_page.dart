@@ -437,7 +437,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // Title
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Column(children: [
             Text(l10n.t('app.name'),
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -465,6 +465,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
           tilePadding: const EdgeInsets.symmetric(horizontal: 16),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           initiallyExpanded: false,
+          clipBehavior: Clip.hardEdge,
           children: [_buildCustomPerms(service)],
         ),
         const SizedBox(height: 16),
@@ -497,6 +498,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
           title: Text(l10n.t('home.advanced')),
           initiallyExpanded: _showAdvanced,
           onExpansionChanged: (v) => setState(() => _showAdvanced = v),
+          clipBehavior: Clip.hardEdge,
           children: [_buildAdvancedOptions()],
         ),
       ]),

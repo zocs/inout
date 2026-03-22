@@ -72,7 +72,7 @@ class AppLocalizations {
     },
     'en': {
       'app.name': 'inout',
-      'app.slogan': 'In and out, that\'s all.',
+      'app.slogan': 'Files in and out, that\'s all.',
       'nav.home': 'Home',
       'nav.settings': 'Settings',
       'home.selectDir': 'Select Share Directory',
