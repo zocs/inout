@@ -2,11 +2,11 @@
 
 # 📦 inout
 
-**One tap, file sharing is live.**
+**In and out, that's all.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20macOS%20%7C%20iOS-lightgrey)]()
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows-lightgrey)]()
 
 A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero configuration, zero barrier.
 
@@ -30,6 +30,7 @@ A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero 
 | 📱 **Scan to Connect** | QR code for instant access from any device |
 | ⬆️⬇️ **Full Control** | Upload, download, search, archive — you decide |
 | 🔐 **Secure** | Optional password auth, CORS control |
+| 🔀 **Custom Permissions** | Fine-grained toggle for each capability |
 | 🎨 **Customizable** | 6 color schemes + dark / light mode |
 | 🌐 **Multilingual** | 简体中文 · 繁體中文 · English |
 | 📦 **Zero Setup** | Self-contained — no external dependencies |
@@ -39,7 +40,7 @@ A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero 
 ```
 1. Pick a folder
 2. Tap "Start Server"
-3. Scan QR code on another device
+3. Scan QR code or enter URL in browser (port required)
 4. Share files — that's it!
 ```
 
@@ -58,7 +59,7 @@ A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero 
 | Platform | Status |
 |:--------:|:------:|
 | 🪟 Windows | ✅ Tested |
-| 🤖 Android | 🔜 In Progress |
+| 🤖 Android | ✅ Tested |
 | 🍎 macOS | 📋 Planned |
 | 🍏 iOS | 📋 Planned |
 | 🐧 Linux | 📋 Planned |
@@ -82,6 +83,14 @@ flutter build windows --debug
 flutter build apk --debug
 ```
 
+### Android Setup
+
+Android requires `MANAGE_EXTERNAL_STORAGE` permission (granted via system settings) and native library extraction via:
+- `android:extractNativeLibs="true"` in AndroidManifest
+- `useLegacyPackaging = true` in build.gradle.kts
+
+These enable dufs binary execution on Android 12+ (SELinux restricted environments).
+
 ## 🧱 Tech Stack
 
 | Component | Technology |
@@ -98,6 +107,6 @@ flutter build apk --debug
 
 <div align="center">
 
-**[inout](https://github.com/zocs/inout)** — files in, files out.
+**[inout](https://github.com/zocs/inout)** — files in and out, that's all.
 
 </div>
