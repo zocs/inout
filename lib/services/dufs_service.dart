@@ -35,10 +35,26 @@ class DufsService extends ChangeNotifier {
     try { return await NetworkInfo().getWifiIP(); } catch (_) { return null; }
   }
 
+  Future<bool> _isPortAvailable(int port) async {
+    try {
+      final socket = await ServerSocket.bind(InternetAddress.anyIPv4, port);
+      await socket.close();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> startServer(ServerConfig config) async {
     if (_isRunning) return;
     if (config.path.isEmpty) { _error = 'No directory'; notifyListeners(); return; }
     if (!await Directory(config.path).exists()) { _error = 'Directory not found'; notifyListeners(); return; }
+    // Check port availability
+    if (!await _isPortAvailable(config.port)) {
+      _error = '端口 ${config.port} 已被占用，请更换端口号';
+      notifyListeners();
+      return;
+    }
     try {
       _error = null; notifyListeners();
       if (Platform.isWindows) {
