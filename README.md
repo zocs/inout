@@ -1,62 +1,68 @@
 # inout
 
-**轻点一下，文件分享即刻在线。**
+**One tap, file sharing is live.**
 
-基于开源项目 [dufs](https://github.com/sigoden/dufs) 开发的图形界面版本，让文件分享零配置、零门槛。
+A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero configuration, zero barrier.
 
-## 功能
+[中文文档](README_zh.md)
 
-- 📱 选好目录，一键开启 HTTP 文件服务
-- 📷 生成二维码，手机扫码即可访问
-- ⬆️ 支持上传、下载、搜索、打包下载
-- 🔐 可选用户名密码认证
-- 🎨 6 种配色方案 + 深色/浅色模式
+## Features
+
+- 📱 Select a directory and start sharing instantly
+- 📷 QR code for quick access from other devices
+- ⬆️ Upload, download, search, and archive download
+- 🔐 Optional username/password authentication
+- 🎨 6 color schemes + dark/light mode
 - 🌐 简体中文 / 繁體中文 / English
-- 📦 零依赖，内置 dufs 二进制
+- 📦 Self-contained — dufs binary included
 
-## 使用方法
+## Quick Start
 
-1. 选择要分享的文件夹
-2. 点击「启动服务」
-3. 其他设备扫描二维码或输入地址
-4. 开始上传/下载文件
+1. Select the folder you want to share
+2. Tap **Start Server**
+3. Other devices scan the QR code or enter the URL
+4. Start uploading and downloading files
 
-## 网络说明
+## Network
 
-- 优先使用局域网（LAN / WLAN），连接同一网络获得最佳体验
-- 支持 ZeroTier、Tailscale、EasyTier 等组网工具
-- 文件传输直接在设备之间进行，不经过第三方服务器
+- Best used on local network (LAN / WLAN) — connect all devices to the same network
+- Also works with ZeroTier, Tailscale, EasyTier, etc.
+- File transfers happen directly between devices — no third-party servers
 
-## 平台
+## Platforms
 
-| 平台 | 状态 |
-|------|------|
-| Windows | ✅ 已测试 |
-| Android | 🔜 待测试 |
-| macOS | 📋 计划中 |
-| iOS | 📋 计划中 |
-| Linux | 📋 计划中 |
+| Platform | Status |
+|----------|--------|
+| Windows | ✅ Tested |
+| Android | 🔜 In progress |
+| macOS | 📋 Planned |
+| iOS | 📋 Planned |
+| Linux | 📋 Planned |
 
-## 构建
+## Build
 
 ```bash
 flutter pub get
-flutter run -d windows    # Windows 调试
-flutter run -d android    # Android 调试
+flutter run -d windows    # Windows debug
+flutter run -d android    # Android debug
 flutter build windows --debug
 flutter build apk --debug
 ```
 
-## 技术栈
+## Tech Stack
 
 - Flutter 3.41 + Dart
-- dufs v0.45.0（Rust 编写的静态文件服务器）
+- [dufs](https://github.com/sigoden/dufs) v0.45.0 (Rust static file server)
 - Material Design 3
 
-## 许可证
+## Privacy
+
+inout does NOT collect, store, or transmit any personal data. File sharing happens locally between your devices. See [PRIVACY.md](PRIVACY.md) for details.
+
+## License
 
 [MIT License](LICENSE)
 
 ---
 
-*inout — 让文件来去自如。*
+*inout — files in, files out.*
