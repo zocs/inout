@@ -38,7 +38,8 @@ cp -r "$BUILD_DIR" "$PKG_DIR"
 cp "assets/dufs/dufs-linux-${ARCH}" "${PKG_DIR}/dufs"
 chmod +x "${PKG_DIR}/dufs"
 
-# ==================== AppImage ====================
+# ==================== AppImage (x86_64 only - appimagetool aarch64 is obsolete) ====================
+if [ "$ARCH" = "x86_64" ]; then
 echo "Creating AppImage..."
 APPDIR="${OUTPUT_DIR}/${APP_NAME}.AppDir"
 rm -rf "${APPDIR}"
@@ -77,16 +78,18 @@ exec "${HERE}/usr/bin/inout_flutter" "$@"
 APPRUN
 chmod +x "${APPDIR}/AppRun"
 
-# Download appimagetool (architecture-specific)
-APPIMAGE_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
+# Download appimagetool
 if [ ! -f /tmp/appimagetool ]; then
-  curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${APPIMAGE_ARCH}.AppImage" -o /tmp/appimagetool
+  curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -o /tmp/appimagetool
   chmod +x /tmp/appimagetool
 fi
 
-export ARCH=${APPIMAGE_ARCH}
+export ARCH=x86_64
 /tmp/appimagetool --comp gzip "${APPDIR}" "${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
 echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
+else
+echo "Skipping AppImage on ${ARCH} (appimagetool aarch64 not available)"
+fi
 
 # ==================== .deb ====================
 echo "Creating .deb package..."
