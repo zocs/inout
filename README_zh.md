@@ -7,6 +7,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
+[![Build](https://img.shields.io/github/actions/workflow/status/zocs/inout/build.yml?label=build)](https://github.com/zocs/inout/actions)
+[![Privacy](https://img.shields.io/badge/Privacy-Policy-green.svg)](PRIVACY.md)
 
 基于开源项目 [dufs](https://github.com/sigoden/dufs) 开发的图形界面版本，让文件分享零配置、零门槛。
 
@@ -30,6 +32,7 @@
 | 📱 **扫码即连接** | 生成二维码，其他设备扫码即可访问 |
 | ⬆️⬇️ **完整控制** | 上传、下载、搜索、打包下载 |
 | 🔐 **安全可选** | 用户名密码认证，CORS 控制 |
+| 🔀 **自定义权限** | 细粒度开关：上传、删除、搜索、归档下载 |
 | 🎨 **自由配色** | 6 种配色方案 + 深色/浅色模式 |
 | 🌐 **多语言** | 简体中文 · 繁體中文 · English |
 | 📦 **零依赖** | 自包含，无需额外安装任何东西 |
@@ -63,15 +66,25 @@
 
 ## 📱 平台支持
 
-| 平台 | 状态 |
-|:----:|:----:|
-| 🪟 Windows | ✅ 已测试 |
-| 🤖 Android | 🔜 测试中 |
-| 🍎 macOS | 📋 计划中 |
-| 🍏 iOS | 📋 计划中 |
-| 🐧 Linux | 📋 计划中 |
+| 平台 | 状态 | 备注 |
+|:----:|:----:|------|
+| 🪟 Windows | ✅ 已测试 | NSIS 安装包 + ZIP 便携版 |
+| 🤖 Android | ✅ 已测试 | ARM64 APK |
+| 🍎 macOS | ⚠️ 未实测 | CI 已构建，欢迎反馈 |
+| 🐧 Linux x64 | ⚠️ 未实测 | AppImage / deb / rpm / tar.gz |
+| 🐧 Linux ARM64 | ⚠️ 未实测 | AppImage / deb（麒麟/UOS 兼容） |
 
-## 🛠️ 构建
+## 🛠️ 开发
+
+### 环境要求
+
+- Flutter SDK 3.41+
+- Windows: VS Build Tools 2022 (C++ workload)
+- Android: Android SDK, NDK
+- Linux: clang, lld, llvm, libgtk-3-dev
+- macOS: Xcode
+
+### 构建
 
 ```bash
 # 克隆
@@ -81,14 +94,48 @@ cd inout
 # 安装依赖
 flutter pub get
 
-# 运行
-flutter run -d windows    # Windows
-flutter run -d android    # Android
+# 运行（调试）
+flutter run -d windows
+flutter run -d android
 
-# 构建
-flutter build windows --debug
-flutter build apk --debug
+# Windows 构建
+flutter build windows --release
+
+# Android 构建
+flutter build apk --release
 ```
+
+### 构建脚本
+
+项目提供了自动化构建脚本：
+
+```bash
+# Linux（x64 或 ARM64）
+bash scripts/build_linux.sh x86_64
+bash scripts/build_linux.sh aarch64
+
+# macOS（ARM64）
+bash scripts/build_macos.sh aarch64
+```
+
+构建产物包括：AppImage、deb、rpm、tar.gz（Linux）和 zip（macOS）。
+
+### CI/CD
+
+GitHub Actions 在 tag push（`v*`）时自动构建全平台安装包并创建 Release：
+
+```
+v0.1.1 → build-android → build-windows → build-linux-x64 → build-linux-arm64 → build-macos-arm64 → release
+```
+
+### Android 注意事项
+
+Android 需要 `MANAGE_EXTERNAL_STORAGE` 权限，且在 Android 12+ 的 SELinux 环境下需要：
+
+- `AndroidManifest.xml`: `android:extractNativeLibs="true"`
+- `build.gradle.kts`: `packaging.jniLibs.useLegacyPackaging = true`
+
+dufs 二进制通过 jniLibs 路径执行（SELinux 允许读取）。
 
 ## 🧱 技术栈
 
@@ -97,6 +144,25 @@ flutter build apk --debug
 | 框架 | [Flutter](https://flutter.dev) 3.41 + Dart |
 | 文件服务 | [dufs](https://github.com/sigoden/dufs) v0.45.0 (Rust) |
 | 设计 | Material Design 3 |
+| 持久化 | SharedPreferences |
+| 窗口管理 | window_manager |
+| 安装包 | NSIS (Windows)、dpkg (Linux)、linuxdeploy (AppImage) |
+
+## 📁 项目结构
+
+```
+lib/
+├── main.dart                  # 入口 + 窗口初始化
+├── app.dart                   # MaterialApp + 主题
+├── l10n/app_localizations.dart # 三语国际化
+├── models/server_config.dart  # 配置模型 + 持久化
+├── pages/
+│   ├── home_page.dart         # 主页：目录/权限/启停/二维码
+│   ├── settings_page.dart     # 设置：主题/配色/语言
+│   └── setup_wizard_page.dart # 首次启动向导
+└── services/
+    └── dufs_service.dart      # dufs 进程管理
+```
 
 ## 📄 许可证
 
