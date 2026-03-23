@@ -62,13 +62,9 @@ class _HomePageState extends State<HomePage> with WindowListener {
     if (_enableAuth) {
       final user = _usernameController.text.trim();
       final pass = _passwordController.text.trim();
-      _config.auth = (user.isNotEmpty) ? '$user:$pass' : null;
+      _config.auth = (user.isNotEmpty && pass.isNotEmpty) ? '$user:$pass' : null;
     } else {
       _config.auth = null;
-    }
-    // Validate: auth requires both username and password
-    if (_enableAuth && _config.auth == null) {
-      _enableAuth = false;
     }
     await _config.save();
   }
@@ -250,6 +246,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
   Future<void> _restartServer(DufsService service) async {
     await service.stopServer();
     await _saveConfig();
+    if (_enableAuth && _config.auth == null) return;
     await service.startServer(_config);
   }
 
@@ -269,7 +266,18 @@ class _HomePageState extends State<HomePage> with WindowListener {
         ),
         onPressed: () async {
           if (running) { await service.stopServer(); }
-          else { await _saveConfig(); await service.startServer(_config); }
+          else {
+            await _saveConfig();
+            if (_enableAuth && _config.auth == null) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.t('home.authRequired'))),
+                );
+              }
+              return;
+            }
+            await service.startServer(_config);
+          }
         },
       ),
     );
