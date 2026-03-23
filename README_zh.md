@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20macOS%20%7C%20iOS-lightgrey)]()
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
 
 基于开源项目 [dufs](https://github.com/sigoden/dufs) 开发的图形界面版本，让文件分享零配置、零门槛。
 
@@ -36,12 +36,20 @@
 
 ## 🚀 快速开始
 
-```
-1. 选择要分享的文件夹
-2. 点击「启动服务」
-3. 其他设备扫描二维码
-4. 开始传文件 — 就这么简单！
-```
+1. 从 [GitHub Releases](https://github.com/zocs/inout/releases/latest) 下载对应平台的安装包：
+
+   | 平台 | 文件 |
+   |------|------|
+   | Android | `inout-*-android-arm64.apk` |
+   | Windows | `inout-*-windows-x64-setup.exe`（安装版）或 `.zip`（便携版） |
+   | macOS | `inout-*-macos-arm64.zip` — ⚠️ 未经实机测试，请反馈问题 |
+   | Linux x64 | `.AppImage`（零依赖）或 `.deb` |
+   | Linux ARM64 | `.AppImage`（零依赖）或 `.deb`（兼容麒麟/UOS） |
+
+2. 选择要分享的文件夹
+3. 点击「启动服务」
+4. 其他设备扫描二维码或输入地址
+5. 开始传文件 — 就这么简单！
 
 ## 🌐 网络
 

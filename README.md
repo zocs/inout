@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows-lightgrey)]()
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
 [![Privacy](https://img.shields.io/badge/Privacy-Policy-green.svg)](PRIVACY.md)
 
 A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero configuration, zero barrier.
@@ -38,7 +38,16 @@ A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero 
 
 ## 🚀 Quick Start
 
-1. [Download](https://github.com/zocs/inout/releases/latest) the latest release
+1. [Download](https://github.com/zocs/inout/releases/latest) the latest release for your platform:
+
+   | Platform | File |
+   |----------|------|
+   | Android | `inout-*-android-arm64.apk` |
+   | Windows | `inout-*-windows-x64-setup.exe` (installer) or `.zip` (portable) |
+   | macOS | `inout-*-macos-arm64.zip` — ⚠️ untested, please report issues |
+   | Linux x64 | `.AppImage` (zero deps) or `.deb` |
+   | Linux ARM64 | `.AppImage` (zero deps) or `.deb` (Kylin/UOS compatible) |
+
 2. Pick a folder
 3. Tap "Start Server"
 4. Scan QR code or enter URL in browser (port required)
