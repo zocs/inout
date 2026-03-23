@@ -6,7 +6,7 @@ SetCompressor /SOLID lzma
 !define APP_VERSION "0.1.0"
 !define APP_PUBLISHER "zocs"
 !define APP_URL "https://github.com/zocs/inout"
-!define APP_EXE "inout_flutter.exe"
+!define APP_EXE "inout.exe"
 
 !include "MUI2.nsh"
 !include "FileFunc.nsh"

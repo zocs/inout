@@ -1,4 +1,4 @@
-ï»¿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,13 +29,13 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   AppLocalizations get l10n => AppLocalizations(widget.config.language);
 
-  static const _ch = MethodChannel('com.inout.inout_flutter/native');
+  static const _ch = MethodChannel('com.inout.inout/native');
   // Cache permission state across page rebuilds
   static bool? _cachedStorageGranted;
 
   final _languages = [
-    {'code': 'zh', 'name': 'ç®€ä½“ä¸­æ–‡'},
-    {'code': 'zhTW', 'name': 'ç¹é«”ä¸­æ–‡'},
+    {'code': 'zh', 'name': '¼òÌåÖĞÎÄ'},
+    {'code': 'zhTW', 'name': '·±ówÖĞÎÄ'},
     {'code': 'en', 'name': 'English'},
   ];
 

@@ -29,7 +29,7 @@ OUTPUT_DIR="build/macos/output"
 mkdir -p "$OUTPUT_DIR"
 
 # Copy .app bundle (Flutter uses project name, not app name)
-APP_BUNDLE="${BUILD_DIR}/inout_flutter.app"
+APP_BUNDLE="${BUILD_DIR}/inout.app"
 if [ ! -d "$APP_BUNDLE" ]; then
   echo "ERROR: ${APP_BUNDLE} not found"
   ls "$BUILD_DIR/" 2>/dev/null

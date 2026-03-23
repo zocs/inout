@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:inout_flutter/models/server_config.dart';
+import 'package:inout/models/server_config.dart';
 
 void main() {
   test('ServerConfig serialization', () {

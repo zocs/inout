@@ -52,7 +52,7 @@ cat > "${APPDIR}/${APP_NAME}.desktop" << 'DESKTOP'
 [Desktop Entry]
 Name=inout
 Comment=Files in and out, that's all.
-Exec=inout_flutter
+Exec=inout
 Icon=inout
 Type=Application
 Categories=Utility;FileTransfer;
@@ -73,7 +73,7 @@ cat > "${APPDIR}/AppRun" << 'APPRUN'
 SELF=$(readlink -f "$0")
 HERE="${SELF%/*}"
 export LD_LIBRARY_PATH="${HERE}/usr/bin/lib:${LD_LIBRARY_PATH}"
-exec "${HERE}/usr/bin/inout_flutter" "$@"
+exec "${HERE}/usr/bin/inout" "$@"
 APPRUN
 chmod +x "${APPDIR}/AppRun"
 
@@ -115,8 +115,8 @@ cp -r "${PKG_DIR}/"* "${DEB_DIR}/opt/${APP_NAME}/"
 # Symlink to /usr/bin
 cat > "${DEB_DIR}/DEBIAN/postinst" << 'POSTINST'
 #!/bin/bash
-ln -sf /opt/inout/inout_flutter /usr/bin/inout
-chmod +x /opt/inout/inout_flutter
+ln -sf /opt/inout/inout /usr/bin/inout
+chmod +x /opt/inout/inout
 POSTINST
 chmod 755 "${DEB_DIR}/DEBIAN/postinst"
 
@@ -131,7 +131,7 @@ cat > "${DEB_DIR}/usr/share/applications/${APP_NAME}.desktop" << 'DESKTOP'
 [Desktop Entry]
 Name=inout
 Comment=Files in and out, that's all.
-Exec=/opt/inout/inout_flutter
+Exec=/opt/inout/inout
 Icon=utilities-terminal
 Type=Application
 Categories=Utility;FileTransfer;
@@ -163,7 +163,7 @@ A graphical file sharing server based on dufs.
 mkdir -p %{buildroot}/opt/${APP_NAME}
 cp -r ${APP_NAME}/* %{buildroot}/opt/${APP_NAME}/
 mkdir -p %{buildroot}/usr/bin
-ln -sf /opt/${APP_NAME}/inout_flutter %{buildroot}/usr/bin/inout
+ln -sf /opt/${APP_NAME}/inout %{buildroot}/usr/bin/inout
 
 %files
 /opt/${APP_NAME}/*
