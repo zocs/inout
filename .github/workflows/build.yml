@@ -115,14 +115,16 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body: |
-            🤖 **此版本由 GitHub Actions 自动化构建并发布**
+            🤖 **Automated build & release by GitHub Actions** | **此版本由 GitHub Actions 自动化构建并发布**
 
-            | 平台 | 文件 |
-            |------|------|
+            | Platform | Files |
+            |----------|-------|
             | Android | `.apk` |
-            | Windows x64 | `.exe` (安装包) + `.zip` (便携版) |
+            | Windows x64 | `.exe` (installer) + `.zip` (portable) |
             | Linux x64 | `.AppImage` + `.deb` + `.tar.gz` |
             | Linux ARM64 | `.AppImage` + `.deb` + `.tar.gz` |
+
+            > 💡 AppImage requires no dependencies, works on any Linux distro. For Chinese domestic distros (Kylin, UOS), use `.AppImage` or `.deb`.
           files: |
             artifacts/**/*.AppImage
             artifacts/**/*.deb
