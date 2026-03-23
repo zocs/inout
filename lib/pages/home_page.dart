@@ -31,8 +31,10 @@ class _HomePageState extends State<HomePage> with WindowListener {
   late ServerConfig _config;
   bool _showAdvanced = false;
   bool _enableAuth = false;
+  bool _obscurePassword = true;
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  late final TextEditingController _portController;
   int _navIndex = 0;
 
   AppLocalizations get l10n => AppLocalizations(_config.language);
@@ -42,6 +44,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
     super.initState();
     windowManager.addListener(this);
     _config = widget.config;
+    _portController = TextEditingController(text: _config.port.toString());
     if (_config.auth != null && _config.auth!.contains(':')) {
       final parts = _config.auth!.split(':');
       _enableAuth = true;
@@ -55,6 +58,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
     windowManager.removeListener(this);
     _usernameController.dispose();
     _passwordController.dispose();
+    _portController.dispose();
     super.dispose();
   }
 
@@ -399,7 +403,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
           ),
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          controller: TextEditingController(text: _config.port.toString()),
+          controller: _portController,
           onChanged: (v) async {
             final port = int.tryParse(v);
             if (port != null && port >= 1 && port <= 65535) {
@@ -414,7 +418,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
       SwitchListTile(
         title: Text(l10n.t('home.enableAuth')),
         value: _enableAuth,
-        onChanged: (v) async { setState(() => _enableAuth = v); await _saveConfig(); },
+        onChanged: (v) { setState(() => _enableAuth = v); _saveConfig(); },
       ),
       if (_enableAuth) ...[
         Padding(
@@ -429,8 +433,14 @@ class _HomePageState extends State<HomePage> with WindowListener {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: TextField(
-            controller: _passwordController, obscureText: true,
-            decoration: InputDecoration(labelText: l10n.t('home.password'), prefixIcon: const Icon(Icons.lock)),
+            controller: _passwordController, obscureText: _obscurePassword,
+            decoration: InputDecoration(
+              labelText: l10n.t('home.password'), prefixIcon: const Icon(Icons.lock),
+              suffixIcon: IconButton(
+                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
+            ),
             onChanged: (_) => _saveConfig(),
           ),
         ),

@@ -29,7 +29,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   AppLocalizations get l10n => AppLocalizations(widget.config.language);
 
-  static const _ch = MethodChannel('com.inout.inout/native');
+  static const _ch = MethodChannel('cc.merr.inout/native');
   // Cache permission state across page rebuilds
   static bool? _cachedStorageGranted;
 
@@ -78,7 +78,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(children: [
             Text('INOUT', style: GoogleFonts.pressStart2p(fontSize: 24, color: Theme.of(context).colorScheme.primary)),
             const SizedBox(height: 12),
-            Text('v0.1.0', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),
+            Text('v0.1.1', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),
             const SizedBox(height: 8),
             Text(l10n.t('about.description'), textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5)),
@@ -105,7 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: () => showLicensePage(
                   context: context,
                   applicationName: 'inout',
-                  applicationVersion: 'v0.1.0',
+                  applicationVersion: 'v0.1.1',
                   applicationLegalese: 'Copyright (c) 2026 zocs\nMIT License',
                 ),
               ),

@@ -45,12 +45,7 @@ app.*.map.json
 /android/app/release
 
 # Build outputs
-*.exe
-*.apk
-*.aab
 build/
-
-# Build artifacts
 dist/
 *.exe
 *.apk

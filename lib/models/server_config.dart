@@ -43,9 +43,6 @@ class ServerConfig {
   /// 配色方案 (coral / teal / violet / ocean / sunset / forest)
   String colorScheme;
 
-  /// 使用系统动态配色 (Android 12+)
-  bool useSystemColor;
-
   /// 是否已完成首次设置
   bool setupDone;
 
@@ -63,7 +60,6 @@ class ServerConfig {
     this.language = 'zh',
     this.themeMode = 'system',
     this.colorScheme = 'coral',
-    this.useSystemColor = true,
     this.setupDone = false,
   });
 
@@ -82,7 +78,6 @@ class ServerConfig {
         'language': language,
         'themeMode': themeMode,
         'colorScheme': colorScheme,
-        'useSystemColor': useSystemColor,
         'setupDone': setupDone,
       };
 
@@ -101,7 +96,6 @@ class ServerConfig {
         language: json['language'] as String? ?? 'zh',
         themeMode: json['themeMode'] as String? ?? 'system',
         colorScheme: json['colorScheme'] as String? ?? 'coral',
-        useSystemColor: json['useSystemColor'] as bool? ?? true,
         setupDone: json['setupDone'] as bool? ?? false,
       );
 
@@ -149,6 +143,17 @@ class ServerConfig {
     allowSearch = true;
     allowArchive = true;
     allowSymlink = false;
+  }
+
+  /// 校验权限字段一致性，返回冲突描述（null = 无冲突）
+  String? validatePermissions() {
+    if (readonly && (allowUpload || allowDelete || allowArchive)) {
+      return 'readonly 模式下不允许开启上传/删除/归档权限';
+    }
+    if (allowDelete && !allowUpload) {
+      return '开启删除权限必须同时开启上传权限';
+    }
+    return null;
   }
 
   @override

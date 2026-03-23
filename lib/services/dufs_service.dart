@@ -8,10 +8,9 @@ import 'package:path_provider/path_provider.dart';
 import '../models/server_config.dart';
 
 class DufsService extends ChangeNotifier {
-  static const _ch = MethodChannel('com.inout.inout/native');
+  static const _ch = MethodChannel('cc.merr.inout/native');
 
   Process? _process;
-  HttpServer? _server;
   bool _isRunning = false;
   String? _serverUrl;
   String? _localIp;
@@ -49,6 +48,9 @@ class DufsService extends ChangeNotifier {
     if (_isRunning) return;
     if (config.path.isEmpty) { _error = 'No directory'; notifyListeners(); return; }
     if (!await Directory(config.path).exists()) { _error = 'Directory not found'; notifyListeners(); return; }
+    // Validate permission consistency
+    final permError = config.validatePermissions();
+    if (permError != null) { _error = permError; notifyListeners(); return; }
     // Check port availability
     if (!await _isPortAvailable(config.port)) {
       _error = '端口 ${config.port} 已被占用，请更换端口';
@@ -57,13 +59,7 @@ class DufsService extends ChangeNotifier {
     }
     try {
       _error = null; notifyListeners();
-      if (Platform.isWindows) {
-        await _startDufs(config);
-      } else if (Platform.isLinux) {
-        await _startDufsLinux(config);
-      } else if (Platform.isMacOS) {
-        await _startDufsMacos(config);
-      } else if (Platform.isAndroid) {
+      if (Platform.isAndroid) {
         final granted = await _ch.invokeMethod<bool>('isStorageGranted') ?? false;
         _log('MANAGE_EXTERNAL_STORAGE granted: $granted');
         if (!granted) {
@@ -72,8 +68,8 @@ class DufsService extends ChangeNotifier {
           await _ch.invokeMethod('requestStorage');
           return;
         }
-        await _startDufsAndroid(config);
       }
+      await _startDufsProcess(config);
       _isRunning = true;
       _localIp = await _getWifiIP();
       _serverUrl = 'http://${_localIp ?? '127.0.0.1'}:${config.port}';
@@ -85,14 +81,29 @@ class DufsService extends ChangeNotifier {
     }
   }
 
-  // ==================== Windows: dufs binary ====================
-  Future<void> _startDufs(ServerConfig c) async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final bin = p.join(appDir.path, 'dufs.exe');
-    if (!await File(bin).exists()) {
-      final data = await rootBundle.load('assets/dufs/dufs-windows.exe');
-      await File(bin).writeAsBytes(data.buffer.asUint8List(), flush: true);
+  // ==================== Platform-specific binary path ====================
+  Future<String> _resolveBinPath() async {
+    if (Platform.isWindows) {
+      final appDir = await getApplicationDocumentsDirectory();
+      final bin = p.join(appDir.path, 'dufs.exe');
+      if (!await File(bin).exists()) {
+        final data = await rootBundle.load('assets/dufs/dufs-windows.exe');
+        await File(bin).writeAsBytes(data.buffer.asUint8List(), flush: true);
+      }
+      return bin;
+    } else if (Platform.isAndroid) {
+      final nativeDir = await _ch.invokeMethod<String>('getNativeLibraryDir');
+      _log('nativeLibraryDir: $nativeDir');
+      return '$nativeDir/libdufs.so';
+    } else {
+      // Linux & macOS: dufs binary next to the app executable
+      final exeDir = File(Platform.resolvedExecutable).parent.path;
+      return p.join(exeDir, 'dufs');
     }
+  }
+
+  // ==================== Build dufs CLI args ====================
+  List<String> _buildArgs(ServerConfig c) {
     final args = <String>['-b', '0.0.0.0', '-p', '${c.port}'];
     if (!c.readonly) {
       if (c.allowUpload) args.add('--allow-upload');
@@ -103,100 +114,47 @@ class DufsService extends ChangeNotifier {
     if (c.auth != null && c.auth!.isNotEmpty) args.addAll(['--auth', '${c.auth!}@/:rw']);
     if (c.cors) args.add('--enable-cors');
     args.add(c.path);
-    _log('dufs: $bin ${args.join(' ')}');
-    _process = await Process.start(bin, args, workingDirectory: c.path);
-    _process!.stdout.listen((d) => _log('out: ${String.fromCharCodes(d).trim()}'));
-    _process!.stderr.listen((d) => _log('err: ${String.fromCharCodes(d).trim()}'));
+    return args;
+  }
+
+  // ==================== Start dufs process ====================
+  Future<void> _startDufsProcess(ServerConfig config) async {
+    final binPath = await _resolveBinPath();
+    if (!await File(binPath).exists()) {
+      throw Exception('dufs binary not found at $binPath');
+    }
+    final args = _buildArgs(config);
+    _log('dufs: $binPath ${args.join(' ')}');
+    _process = await Process.start(binPath, args, workingDirectory: config.path);
+    _process!.stdout.listen((d) {
+      final line = String.fromCharCodes(d).trim();
+      _log('out: $line');
+      _trackActivity(line);
+    });
+    _process!.stderr.listen((d) {
+      final line = String.fromCharCodes(d).trim();
+      _log('err: $line');
+      _trackActivity(line);
+    });
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
-  // ==================== Linux: dufs binary ====================
-  Future<void> _startDufsLinux(ServerConfig config) async {
-    // dufs binary is placed next to the executable by the build script
-    final exeDir = File(Platform.resolvedExecutable).parent.path;
-    final binPath = p.join(exeDir, 'dufs');
-    _log('linux dufs: $binPath exists=${await File(binPath).exists()}');
-    if (await File(binPath).exists()) {
-      final args = <String>['-b', '0.0.0.0', '-p', '${config.port}'];
-      if (!config.readonly) {
-        if (config.allowUpload) args.add('--allow-upload');
-        if (config.allowDelete) args.add('--allow-delete');
-        if (config.allowSearch) args.add('--allow-search');
-        if (config.allowArchive) args.add('--allow-archive');
-      }
-      if (config.auth != null && config.auth!.isNotEmpty) args.addAll(['--auth', '${config.auth!}@/:rw']);
-      if (config.cors) args.add('--enable-cors');
-      args.add(config.path);
-      _log('dufs: $binPath ${args.join(' ')}');
-      _process = await Process.start(binPath, args);
-      _process!.stdout.listen((d) => _log('dufs: ${String.fromCharCodes(d).trim()}'));
-      _process!.stderr.listen((d) => _log('dufs ERR: ${String.fromCharCodes(d).trim()}'));
-      await Future.delayed(const Duration(milliseconds: 300));
-    } else {
-      _log('ERROR: $binPath not found!');
-      throw Exception('dufs binary not found at $binPath');
-    }
-  }
-
-  // ==================== macOS: dufs binary ====================
-  Future<void> _startDufsMacos(ServerConfig config) async {
-    // dufs binary is in Contents/MacOS/ alongside the app executable
-    final exeDir = File(Platform.resolvedExecutable).parent.path;
-    final binPath = p.join(exeDir, 'dufs');
-    _log('macos dufs: $binPath exists=${await File(binPath).exists()}');
-    if (await File(binPath).exists()) {
-      final args = <String>['-b', '0.0.0.0', '-p', '${config.port}'];
-      if (!config.readonly) {
-        if (config.allowUpload) args.add('--allow-upload');
-        if (config.allowDelete) args.add('--allow-delete');
-        if (config.allowSearch) args.add('--allow-search');
-        if (config.allowArchive) args.add('--allow-archive');
-      }
-      if (config.auth != null && config.auth!.isNotEmpty) args.addAll(['--auth', '${config.auth!}@/:rw']);
-      if (config.cors) args.add('--enable-cors');
-      args.add(config.path);
-      _log('dufs: $binPath ${args.join(' ')}');
-      _process = await Process.start(binPath, args);
-      _process!.stdout.listen((d) => _log('dufs: ${String.fromCharCodes(d).trim()}'));
-      _process!.stderr.listen((d) => _log('dufs ERR: ${String.fromCharCodes(d).trim()}'));
-      await Future.delayed(const Duration(milliseconds: 300));
-    } else {
-      _log('ERROR: $binPath not found!');
-      throw Exception('dufs binary not found at $binPath');
-    }
-  }
-
-  // ==================== Android: dufs binary ====================
-  Future<void> _startDufsAndroid(ServerConfig config) async {
-    final nativeDir = await _ch.invokeMethod<String>('getNativeLibraryDir');
-    _log('nativeLibraryDir: $nativeDir');
-    final binPath = '$nativeDir/libdufs.so';
-    if (await File(binPath).exists()) {
-      final args = <String>['-b', '0.0.0.0', '-p', '${config.port}'];
-      if (!config.readonly) {
-        if (config.allowUpload) args.add('--allow-upload');
-        if (config.allowDelete) args.add('--allow-delete');
-        if (config.allowSearch) args.add('--allow-search');
-        if (config.allowArchive) args.add('--allow-archive');
-      }
-      if (config.auth != null && config.auth!.isNotEmpty) args.addAll(['--auth', '${config.auth!}@/:rw']);
-      if (config.cors) args.add('--enable-cors');
-      args.add(config.path);
-      _log('dufs: $binPath ${args.join(' ')}');
-      _process = await Process.start(binPath, args);
-      _process!.stdout.listen((d) => _log('dufs: ${String.fromCharCodes(d).trim()}'));
-      _process!.stderr.listen((d) => _log('dufs ERR: ${String.fromCharCodes(d).trim()}'));
-      await Future.delayed(const Duration(milliseconds: 300));
-    } else {
-      _log('ERROR: $binPath not found!');
-      throw Exception('dufs binary not found in jniLibs');
+  /// 解析 dufs 输出行，更新请求计数和最后活跃时间
+  /// dufs 日志格式: "2024-01-01 12:00:00 | 200 | GET /path"
+  void _trackActivity(String line) {
+    // dufs logs requests with HTTP method + status code patterns
+    final hasMethod = RegExp(r'\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\b').hasMatch(line);
+    final hasStatus = RegExp(r'\b[2-5]\d{2}\b').hasMatch(line);
+    if (hasMethod || hasStatus) {
+      _totalRequests++;
+      _lastActivity = DateTime.now().toIso8601String().substring(11, 19); // HH:mm:ss
+      notifyListeners();
     }
   }
 
   Future<void> stopServer() async {
     if (!_isRunning) return;
     if (_process != null) { _process!.kill(); _process = null; }
-    if (_server != null) { await _server!.close(force: true); _server = null; }
     _isRunning = false; _serverUrl = null; _totalRequests = 0; _lastActivity = null;
     notifyListeners();
   }
@@ -206,10 +164,6 @@ class DufsService extends ChangeNotifier {
     // Synchronous cleanup - don't await in dispose
     try { _process?.kill(); } catch (_) {}
     _process = null;
-    if (_server != null) {
-      _server!.close(force: true).catchError((_) {});
-      _server = null;
-    }
     _isRunning = false;
     super.dispose();
   }

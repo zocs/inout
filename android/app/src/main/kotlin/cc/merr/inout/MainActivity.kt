@@ -1,4 +1,4 @@
-package com.inout.inout
+package cc.merr.inout
 
 import android.content.Intent
 import android.net.Uri
@@ -11,7 +11,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.inout.inout/native"
+    private val CHANNEL = "cc.merr.inout/native"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
