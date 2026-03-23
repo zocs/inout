@@ -20,11 +20,11 @@ jobs:
           flutter-version: '3.41.5'
       - run: flutter build apk --release
       - name: Rename APK
-        run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ github.ref_name }}-android.apk
+        run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ github.ref_name }}-android-arm64.apk
       - uses: actions/upload-artifact@v4
         with:
           name: android
-          path: inout-${{ github.ref_name }}-android.apk
+          path: inout-${{ github.ref_name }}-android-arm64.apk
 
   build-windows:
     name: Windows x64
