@@ -5,6 +5,9 @@ set -e
 ARCH=${1:-x86_64}
 VERSION=$(grep 'version:' pubspec.yaml | head -1 | awk '{print $2}' | tr -d '+')
 APP_NAME="inout"
+
+# Architecture mapping
+DEB_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "amd64")
 ARCHIVE_NAME="${APP_NAME}-${VERSION}-linux-${ARCH}"
 
 echo "Building inout ${VERSION} for Linux ${ARCH}..."
@@ -38,6 +41,7 @@ chmod +x "${PKG_DIR}/dufs"
 # ==================== AppImage ====================
 echo "Creating AppImage..."
 APPDIR="${OUTPUT_DIR}/${APP_NAME}.AppDir"
+rm -rf "${APPDIR}"
 mkdir -p "${APPDIR}/usr/bin" "${APPDIR}/usr/share/applications" "${APPDIR}/usr/share/icons/hicolor/256x256/apps"
 
 # Copy app files
@@ -73,20 +77,21 @@ exec "${HERE}/usr/bin/inout_flutter" "$@"
 APPRUN
 chmod +x "${APPDIR}/AppRun"
 
-# Download appimagetool
+# Download appimagetool (architecture-specific)
+APPIMAGE_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
 if [ ! -f /tmp/appimagetool ]; then
-  curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${ARCH}.AppImage" -o /tmp/appimagetool
+  curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${APPIMAGE_ARCH}.AppImage" -o /tmp/appimagetool
   chmod +x /tmp/appimagetool
 fi
 
-ARCH_FLAG=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-export ARCH=$ARCH_FLAG
+export ARCH=${APPIMAGE_ARCH}
 /tmp/appimagetool --comp gzip "${APPDIR}" "${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
 echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
 
 # ==================== .deb ====================
 echo "Creating .deb package..."
 DEB_DIR="${OUTPUT_DIR}/${APP_NAME}-deb"
+rm -rf "${DEB_DIR}"
 mkdir -p "${DEB_DIR}/DEBIAN" "${DEB_DIR}/opt/${APP_NAME}" "${DEB_DIR}/usr/share/applications" "${DEB_DIR}/usr/bin"
 
 # Control file
@@ -95,7 +100,7 @@ Package: ${APP_NAME}
 Version: ${VERSION}
 Section: utils
 Priority: optional
-Architecture: ${ARCH}
+Architecture: ${DEB_ARCH}
 Depends: libgtk-3-0, libglib2.0-0
 Maintainer: zocs <zocs@live.com>
 Description: Files in and out, that's all.
@@ -127,7 +132,7 @@ Comment=Files in and out, that's all.
 Exec=/opt/inout/inout_flutter
 Icon=utilities-terminal
 Type=Application
-Categories=Utility;Network;FileTransfer;
+Categories=Utility;FileTransfer;
 Terminal=false
 DESKTOP
 
@@ -137,8 +142,9 @@ echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.deb"
 # ==================== .rpm ====================
 echo "Creating .rpm package..."
 if command -v rpmbuild &> /dev/null; then
-  RPM_DIR="${OUTPUT_DIR}/rpm"
-  mkdir -p "${RPM_DIR}/SOURCES" "${RPM_DIR}/SPECS"
+  RPM_DIR="${OUTPUT_DIR}/rpm-build"
+  mkdir -p "${RPM_DIR}/BUILD" "${RPM_DIR}/RPMS" "${RPM_DIR}/SOURCES" "${RPM_DIR}/SPECS" "${RPM_DIR}/SRPMS"
+  cp -r "${PKG_DIR}" "${RPM_DIR}/BUILD/${APP_NAME}"
 
   cat > "${RPM_DIR}/SPECS/${APP_NAME}.spec" << SPEC
 Name: ${APP_NAME}
@@ -153,7 +159,7 @@ A graphical file sharing server based on dufs.
 
 %install
 mkdir -p %{buildroot}/opt/${APP_NAME}
-cp -r ${PKG_DIR}/* %{buildroot}/opt/${APP_NAME}/
+cp -r ${APP_NAME}/* %{buildroot}/opt/${APP_NAME}/
 mkdir -p %{buildroot}/usr/bin
 ln -sf /opt/${APP_NAME}/inout_flutter %{buildroot}/usr/bin/inout
 
@@ -162,9 +168,15 @@ ln -sf /opt/${APP_NAME}/inout_flutter %{buildroot}/usr/bin/inout
 /usr/bin/inout
 SPEC
 
-  rpmbuild -bb --define "_topdir ${RPM_DIR}" "${RPM_DIR}/SPECS/${APP_NAME}.spec"
-  cp "${RPM_DIR}/RPMS/${ARCH}/${APP_NAME}-${VERSION}-1.${ARCH}.rpm" "${OUTPUT_DIR}/${ARCHIVE_NAME}.rpm"
-  echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.rpm"
+  rpmbuild -bb --define "_topdir ${RPM_DIR}" --define "_builddir ${RPM_DIR}/BUILD" "${RPM_DIR}/SPECS/${APP_NAME}.spec" 2>&1 || echo "RPM build failed, continuing..."
+  # Copy RPM if created
+  RPM_FILE=$(find "${RPM_DIR}/RPMS" -name "*.rpm" 2>/dev/null | head -1)
+  if [ -n "$RPM_FILE" ]; then
+    cp "$RPM_FILE" "${OUTPUT_DIR}/${ARCHIVE_NAME}.rpm"
+    echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.rpm"
+  else
+    echo "RPM not created, skipping"
+  fi
 else
   echo "rpmbuild not found, skipping .rpm"
 fi
@@ -177,3 +189,4 @@ echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.tar.gz"
 echo ""
 echo "Build complete! Output files:"
 ls -la "${OUTPUT_DIR}/"*.AppImage "${OUTPUT_DIR}/"*.deb "${OUTPUT_DIR}/"*.tar.gz 2>/dev/null || true
+ls -la "${OUTPUT_DIR}/"*.rpm 2>/dev/null || true
