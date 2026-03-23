@@ -28,8 +28,8 @@ BUILD_DIR="build/macos/Build/Products/Release"
 OUTPUT_DIR="build/macos/output"
 mkdir -p "$OUTPUT_DIR"
 
-# Copy .app bundle
-APP_BUNDLE="${BUILD_DIR}/${APP_NAME}.app"
+# Copy .app bundle (Flutter uses project name, not app name)
+APP_BUNDLE="${BUILD_DIR}/inout_flutter.app"
 if [ ! -d "$APP_BUNDLE" ]; then
   echo "ERROR: ${APP_BUNDLE} not found"
   ls "$BUILD_DIR/" 2>/dev/null
@@ -39,8 +39,12 @@ cp -r "$APP_BUNDLE" "${OUTPUT_DIR}/${APP_NAME}.app"
 
 # Include dufs binary in the app bundle
 APP_CONTENTS="${OUTPUT_DIR}/${APP_NAME}.app/Contents/MacOS"
+# Flutter uses project name for executable
 cp "assets/dufs/dufs-macos-${DISPLAY_ARCH}" "${APP_CONTENTS}/dufs"
 chmod +x "${APP_CONTENTS}/dufs"
+
+echo "App contents:"
+ls -la "${APP_CONTENTS}/"
 
 # Create DMG-like zip (simpler for distribution)
 echo "Creating zip archive..."
