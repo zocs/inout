@@ -51,7 +51,7 @@ Comment=Files in and out, that's all.
 Exec=inout_flutter
 Icon=inout
 Type=Application
-Categories=Utility;Network;FileTransfer;
+Categories=Utility;FileTransfer;
 Terminal=false
 DESKTOP
 
@@ -80,7 +80,7 @@ if [ ! -f /tmp/appimagetool ]; then
 fi
 
 ARCH_FLAG=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-/tmp/appimagetool --comp gzip "${APPDIR}" "${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
+ARCH=$ARCH_FLAG /tmp/appimagetool --comp gzip "${APPDIR}" "${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
 echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
 
 # ==================== .deb ====================
