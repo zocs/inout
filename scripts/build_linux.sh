@@ -93,9 +93,6 @@ find "${APPDIR}" -type f -exec file {} \; | grep -v "${APPIMAGE_ARCH}" | grep -v
 done
 /tmp/appimagetool --comp gzip "${APPDIR}" "${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
 echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
-else
-echo "Skipping AppImage on ${ARCH} (appimagetool aarch64 not available)"
-fi
 
 # ==================== .deb ====================
 echo "Creating .deb package..."
