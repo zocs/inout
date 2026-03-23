@@ -10,51 +10,50 @@ permissions:
   contents: write
 
 jobs:
-  build-android:
-    name: Android
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.5'
-      - run: flutter build apk --release
-      - name: Rename APK
-        run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ github.ref_name }}-android.apk
-      - uses: actions/upload-artifact@v4
-        with:
-          name: android
-          path: inout-${{ github.ref_name }}-android.apk
+  # build-android:
+  #   name: Android
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: '3.41.5'
+  #     - run: flutter build apk --release
+  #     - name: Rename APK
+  #       run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ github.ref_name }}-android.apk
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: android
+  #         path: inout-${{ github.ref_name }}-android.apk
 
-  build-windows:
-    name: Windows x64
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.5'
-      - run: flutter build windows --release
-      - name: Create zip
-        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath inout-${{ github.ref_name }}-windows-x64.zip
-      - name: Install NSIS
-        run: |
-          choco install nsis -y
-          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      - name: Build NSIS installer
-        run: makensis installer\inout.nsi
-      - name: Rename installer
-        shell: bash
-        run: |
-          # Find the output exe (NSIS version in filename)
-          EXE=$(ls inout-*-windows-x64-setup.exe | head -1)
-          mv "$EXE" inout-${{ github.ref_name }}-windows-x64-setup.exe
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows
-          path: |
-            inout-${{ github.ref_name }}-windows-x64.zip
-            inout-${{ github.ref_name }}-windows-x64-setup.exe
+  # build-windows:
+  #   name: Windows x64
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: '3.41.5'
+  #     - run: flutter build windows --release
+  #     - name: Create zip
+  #       run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath inout-${{ github.ref_name }}-windows-x64.zip
+  #     - name: Install NSIS
+  #       run: |
+  #         choco install nsis -y
+  #         echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+  #     - name: Build NSIS installer
+  #       run: makensis installer\inout.nsi
+  #     - name: Rename installer
+  #       shell: bash
+  #       run: |
+  #         EXE=$(ls inout-*-windows-x64-setup.exe | head -1)
+  #         mv "$EXE" inout-${{ github.ref_name }}-windows-x64-setup.exe
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: windows
+  #         path: |
+  #           inout-${{ github.ref_name }}-windows-x64.zip
+  #           inout-${{ github.ref_name }}-windows-x64-setup.exe
 
   build-linux-x64:
     name: Linux x64
@@ -101,7 +100,7 @@ jobs:
 
   release:
     name: Release
-    needs: [build-android, build-windows, build-linux-x64]
+    needs: [build-linux-x64]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:

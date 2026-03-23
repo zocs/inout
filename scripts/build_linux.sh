@@ -80,7 +80,8 @@ if [ ! -f /tmp/appimagetool ]; then
 fi
 
 ARCH_FLAG=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-ARCH=$ARCH_FLAG /tmp/appimagetool --comp gzip "${APPDIR}" "${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
+export ARCH=$ARCH_FLAG
+/tmp/appimagetool --comp gzip "${APPDIR}" "${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
 echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
 
 # ==================== .deb ====================
