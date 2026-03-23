@@ -34,8 +34,8 @@ class _SettingsPageState extends State<SettingsPage> {
   static bool? _cachedStorageGranted;
 
   final _languages = [
-    {'code': 'zh', 'name': '¼òÌåÖĞÎÄ'},
-    {'code': 'zhTW', 'name': '·±ówÖĞÎÄ'},
+    {'code': 'zh', 'name': 'ç®€ä½“ä¸­æ–‡'},
+    {'code': 'zhTW', 'name': 'ç¹é«”ä¸­æ–‡'},
     {'code': 'en', 'name': 'English'},
   ];
 
