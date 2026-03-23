@@ -1,6 +1,6 @@
 {
-    "name": "inout_flutter",
-    "short_name": "inout_flutter",
+    "name": "inout",
+    "short_name": "inout",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

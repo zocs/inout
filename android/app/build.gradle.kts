@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.inout.inout_flutter"
+    namespace = "com.inout.inout"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.inout.inout_flutter"
+        applicationId = "com.inout.inout"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
