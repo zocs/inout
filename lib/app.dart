@@ -3,7 +3,7 @@ import 'models/server_config.dart';
 import 'pages/home_page.dart';
 import 'pages/setup_wizard_page.dart';
 
-const appVersion = '0.1.1';
+const appVersion = '0.1.2';
 
 const Map<String, Color> presetColors = {
   'coral': Color(0xFFFF6B5A),
