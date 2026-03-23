@@ -10,69 +10,69 @@ permissions:
   contents: write
 
 jobs:
-  # build-android:
-  #   name: Android
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: subosito/flutter-action@v2
-  #       with:
-  #         flutter-version: '3.41.5'
-  #     - run: flutter build apk --release
-  #     - name: Rename APK
-  #       run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ github.ref_name }}-android.apk
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: android
-  #         path: inout-${{ github.ref_name }}-android.apk
+  build-android:
+    name: Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.5'
+      - run: flutter build apk --release
+      - name: Rename APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ github.ref_name }}-android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: inout-${{ github.ref_name }}-android.apk
 
-  # build-windows:
-  #   name: Windows x64
-  #   runs-on: windows-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: subosito/flutter-action@v2
-  #       with:
-  #         flutter-version: '3.41.5'
-  #     - run: flutter build windows --release
-  #     - name: Create zip
-  #       run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath inout-${{ github.ref_name }}-windows-x64.zip
-  #     - name: Install NSIS
-  #       run: |
-  #         choco install nsis -y
-  #         echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-  #     - name: Build NSIS installer
-  #       run: makensis installer\inout.nsi
-  #     - name: Rename installer
-  #       shell: bash
-  #       run: |
-  #         EXE=$(ls inout-*-windows-x64-setup.exe | head -1)
-  #         mv "$EXE" inout-${{ github.ref_name }}-windows-x64-setup.exe
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: windows
-  #         path: |
-  #           inout-${{ github.ref_name }}-windows-x64.zip
-  #           inout-${{ github.ref_name }}-windows-x64-setup.exe
+  build-windows:
+    name: Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.5'
+      - run: flutter build windows --release
+      - name: Create zip
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath inout-${{ github.ref_name }}-windows-x64.zip
+      - name: Install NSIS
+        run: |
+          choco install nsis -y
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Build NSIS installer
+        run: makensis installer\inout.nsi
+      - name: Rename installer
+        shell: bash
+        run: |
+          EXE=$(ls inout-*-windows-x64-setup.exe | head -1)
+          mv "$EXE" inout-${{ github.ref_name }}-windows-x64-setup.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            inout-${{ github.ref_name }}-windows-x64.zip
+            inout-${{ github.ref_name }}-windows-x64-setup.exe
 
-  # build-linux-x64:
-  #   name: Linux x64
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: subosito/flutter-action@v2
-  #       with:
-  #         flutter-version: '3.41.5'
-  #     - name: Install dependencies
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y libgtk-3-dev dpkg-dev libfuse2 cmake ninja-build clang lld llvm
-  #     - name: Build and package
-  #       run: bash scripts/build_linux.sh x86_64
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: linux-x64
-  #         path: build/linux/output/*
+  build-linux-x64:
+    name: Linux x64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.5'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev dpkg-dev libfuse2 cmake ninja-build clang lld llvm
+      - name: Build and package
+        run: bash scripts/build_linux.sh x86_64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: build/linux/output/*
 
   build-linux-arm64:
     name: Linux ARM64
@@ -95,24 +95,14 @@ jobs:
         run: |
           export PATH="$HOME/flutter/bin:$HOME/flutter/bin/cache/dart-sdk/bin:$PATH"
           bash scripts/build_linux.sh aarch64
-      - name: Debug - check AppDir contents
-        if: always()
-        run: |
-          echo "=== AppDir files ==="
-          find build/linux/output/inout.AppDir -type f 2>/dev/null | head -30
-          echo "=== File architectures ==="
-          find build/linux/output/inout.AppDir -type f -exec file {} \; 2>/dev/null | head -20
-          echo "=== Output files ==="
-          ls -la build/linux/output/ 2>/dev/null
       - uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: linux-arm64
           path: build/linux/output/*
 
   release:
     name: Release
-    needs: [build-linux-arm64]
+    needs: [build-android, build-windows, build-linux-x64, build-linux-arm64]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -124,6 +114,15 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
+          body: |
+            🤖 **此版本由 GitHub Actions 自动化构建并发布**
+
+            | 平台 | 文件 |
+            |------|------|
+            | Android | `.apk` |
+            | Windows x64 | `.exe` (安装包) + `.zip` (便携版) |
+            | Linux x64 | `.AppImage` + `.deb` + `.tar.gz` |
+            | Linux ARM64 | `.AppImage` + `.deb` + `.tar.gz` |
           files: |
             artifacts/**/*.AppImage
             artifacts/**/*.deb
