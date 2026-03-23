@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../models/server_config.dart';
-import '../app.dart' show presetColors;
+import '../app.dart' show presetColors, appVersion;
 
 class SettingsPage extends StatefulWidget {
   final ServerConfig config;
@@ -78,7 +78,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(children: [
             Text('INOUT', style: GoogleFonts.pressStart2p(fontSize: 24, color: Theme.of(context).colorScheme.primary)),
             const SizedBox(height: 12),
-            Text('v0.1.1', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),
+            Text('v$appVersion', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),
             const SizedBox(height: 8),
             Text(l10n.t('about.description'), textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5)),
@@ -105,7 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: () => showLicensePage(
                   context: context,
                   applicationName: 'inout',
-                  applicationVersion: 'v0.1.1',
+                  applicationVersion: 'v$appVersion',
                   applicationLegalese: 'Copyright (c) 2026 zocs\nMIT License',
                 ),
               ),

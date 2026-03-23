@@ -121,7 +121,7 @@ class DufsService extends ChangeNotifier {
   Future<void> _startDufsProcess(ServerConfig config) async {
     final binPath = await _resolveBinPath();
     if (!await File(binPath).exists()) {
-      throw Exception('dufs binary not found at $binPath');
+      throw Exception('dufs 服务组件缺失，请重新安装应用。路径: $binPath');
     }
     final args = _buildArgs(config);
     _log('dufs: $binPath ${args.join(' ')}');
@@ -140,12 +140,11 @@ class DufsService extends ChangeNotifier {
   }
 
   /// 解析 dufs 输出行，更新请求计数和最后活跃时间
-  /// dufs 日志格式: "2024-01-01 12:00:00 | 200 | GET /path"
+  /// dufs 日志格式示例: "2024-01-01 12:00:00 | 200 | GET /path"
   void _trackActivity(String line) {
-    // dufs logs requests with HTTP method + status code patterns
-    final hasMethod = RegExp(r'\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\b').hasMatch(line);
-    final hasStatus = RegExp(r'\b[2-5]\d{2}\b').hasMatch(line);
-    if (hasMethod || hasStatus) {
+    // 只匹配包含 " | 状态码 |" 格式的行，避免匹配端口号等
+    final isRequest = RegExp(r'\|\s*[1-5]\d{2}\s*\|').hasMatch(line);
+    if (isRequest) {
       _totalRequests++;
       _lastActivity = DateTime.now().toIso8601String().substring(11, 19); // HH:mm:ss
       notifyListeners();

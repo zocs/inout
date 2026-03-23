@@ -150,9 +150,6 @@ class ServerConfig {
     if (readonly && (allowUpload || allowDelete || allowArchive)) {
       return 'readonly 模式下不允许开启上传/删除/归档权限';
     }
-    if (allowDelete && !allowUpload) {
-      return '开启删除权限必须同时开启上传权限';
-    }
     return null;
   }
 
