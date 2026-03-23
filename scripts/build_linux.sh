@@ -77,22 +77,18 @@ exec "${HERE}/usr/bin/inout_flutter" "$@"
 APPRUN
 chmod +x "${APPDIR}/AppRun"
 
-# Download appimagetool (use linuxdeploy for better architecture handling)
-APPIMAGE_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-if [ ! -f /tmp/appimagetool ]; then
-  curl -sL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${APPIMAGE_ARCH}.AppImage" -o /tmp/appimagetool
-  chmod +x /tmp/appimagetool
+# Download linuxdeploy (better architecture handling than appimagetool)
+LINUXDEPLOY_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
+if [ ! -f /tmp/linuxdeploy ]; then
+  curl -sL "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${LINUXDEPLOY_ARCH}.AppImage" -o /tmp/linuxdeploy
+  chmod +x /tmp/linuxdeploy
 fi
 
-# Explicitly set ARCH to avoid "more than one architecture" error
-export ARCH=${APPIMAGE_ARCH}
-# Remove any foreign-architecture files from AppDir before packaging
-find "${APPDIR}" -type f -exec file {} \; | grep -v "${APPIMAGE_ARCH}" | grep -v "ASCII\|text\|symbolic\|directory\|empty\|data" | awk -F: '{print $1}' | while read f; do
-  echo "Removing foreign-arch file: $f"
-  rm -f "$f"
-done
-/tmp/appimagetool --comp gzip "${APPDIR}" "${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
-echo "Created: ${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
+# Use linuxdeploy for AppImage creation
+export ARCH=${LINUXDEPLOY_ARCH}
+export OUTPUT="${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
+/tmp/linuxdeploy --appdir "${APPDIR}" --output appimage
+echo "Created: ${OUTPUT}"
 
 # ==================== .deb ====================
 echo "Creating .deb package..."
