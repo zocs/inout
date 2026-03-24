@@ -2,77 +2,170 @@
 
 # 📦 inout
 
-**In and out, that's all.**
+**In and out, that's all.** — 轻点一下，文件分享即刻在线。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
+[![Release](https://img.shields.io/github/v/release/zocs/inout)](https://github.com/zocs/inout/releases)
+[![License](https://img.shields.io/github/license/zocs/inout)](LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/zocs/inout/total)](https://github.com/zocs/inout/releases)
+[![Flutter](https://img.shields.io/badge/Flutter-3.41+-blue)](https://flutter.dev)
+[![Platform](https://img.shields.io/badge/Platform-Windows%7CAndroid%7CLinux%7CmacOS-lightgrey)](https://github.com/zocs/inout/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/zocs/inout/build.yml?label=build)](https://github.com/zocs/inout/actions)
-[![Privacy](https://img.shields.io/badge/Privacy-Policy-green.svg)](PRIVACY.md)
 
-A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero configuration, zero barrier.
-
-[中文文档](README_zh.md) · [Privacy Policy](PRIVACY.md)
+[中文文档](./README_zh.md) · [Privacy Policy](./PRIVACY.md) · [📥 Releases](https://github.com/zocs/inout/releases)
 
 </div>
 
 ---
 
+A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). **Zero config, zero barrier** — run inout on one device, and anyone with a browser can access and transfer files. The other side needs no app.
+
+---
+
 ## ✨ Why inout?
 
-> **The other side doesn't need an app.** Just install inout on ONE device, start the server, and anyone with a browser can access and transfer files — no apps, no accounts, no setup.
-
-- 📱 **One device is enough** — the rest use a browser
-- ⬆️⬇️ **Bidirectional** — upload AND download, not just send
-- 🔗 **Just open a link** — QR code or URL, that's all the other side needs
+> **The other side doesn't need an app.** Install inout on ONE device, start the server, and anyone with a browser can upload and download files.
 
 | Feature | |
-|:---:|:---:|
-| 📂 **Pick & Share** | Select any folder, one tap to start sharing |
-| 📱 **Scan to Connect** | QR code for instant access from any device |
-| ⬆️⬇️ **Full Control** | Upload, download, search, archive — you decide |
+|:---|:---:|
+| 📱 **One device is enough** | The rest use a browser |
+| ⬆️⬇️ **Bidirectional** | Upload AND download, not just send |
+| 🔗 **Just open a link** | QR code or URL — that's all the other side needs |
 | 🔐 **Secure** | Optional password auth, CORS control |
-| 🔀 **Custom Permissions** | Fine-grained toggle for each capability |
 | 🎨 **Customizable** | 6 color schemes + dark / light mode |
 | 🌐 **Multilingual** | 简体中文 · 繁體中文 · English |
-| 📦 **Zero Setup** | Self-contained — no external dependencies |
+| 📦 **Zero setup** | Self-contained — no external dependencies |
+
+---
+
+## 💡 Use Cases
+
+| Scenario | How |
+|:---|:---:|
+| 🏠 **Home file sharing** | Phone hotspot → browser access → transfer photos / docs |
+| 💼 **Office quick transfer** | One PC starts → colleagues scan → share project files |
+| 🎓 **Classroom distribution** | Teacher starts → students scan → download courseware |
+| 🔧 **Device debugging** | Embedded device → phone hotspot → download logs |
+| 📷 **Photo dump** | Camera/phone starts → PC bulk downloads |
+
+---
 
 ## 🚀 Quick Start
 
-1. [Download](https://github.com/zocs/inout/releases/latest) the latest release for your platform:
+### Download
 
-   | Platform | File |
-   |----------|------|
-   | Android | `inout-*-android-arm64.apk` |
-   | Windows | `inout-*-windows-x64-setup.exe` (installer) or `.zip` (portable) |
-   | macOS | `inout-*-macos-arm64.zip` — ⚠️ untested, please report issues |
-   | Linux x64 | `.AppImage` (zero deps) or `.deb` |
-   | Linux ARM64 | `.AppImage` (zero deps) or `.deb` (Kylin/UOS compatible) |
+| Platform | File | |
+|:---|:---|:---:|
+| 🪟 **Windows** | `inout-*-windows-x64-setup.exe` (installer) or `.zip` (portable) | ✅ Tested |
+| 🤖 **Android** | `inout-*-android-arm64.apk` | ✅ Tested |
+| 🐧 **Linux x64** | `.AppImage` (zero deps) or `.deb` | ✅ Tested |
+| 🐧 **Linux ARM64** | `.AppImage` or `.deb` (Kylin/UOS compatible) | ✅ Tested |
+| 🍎 **macOS** | `inout-*-macos-arm64.zip` | ⚠️ Untested |
 
-2. Pick a folder
-3. Tap "Start Server"
-4. Scan QR code or enter URL in browser (port required)
-5. Share files — that's it!
+> 📥 [Download latest release](https://github.com/zocs/inout/releases)
+
+### Steps
+
+1. Pick a folder
+2. Tap "Start Server"
+3. Scan QR code or enter URL in browser (port required)
+4. Share files — done!
+
+---
 
 ## 🌐 Network
 
 > **Simplest setup:** All devices on the same WiFi or hotspot.
 
-- 🏠 **Same WiFi** — just connect and share
-- 📱 **Phone hotspot** — one device creates a hotspot, others join, no router needed
-- 🌍 **Remote access** — works with ZeroTier, Tailscale, EasyTier, or any VPN
+| Environment | |
+|:---|:---:|
+| 🏠 **Same WiFi** | Just connect and share |
+| 📱 **Phone hotspot** | One device creates a hotspot, others join — no router needed |
+| 🌍 **Remote access** | Works with ZeroTier, Tailscale, EasyTier, or any VPN |
 
-> 🔒 All transfers happen directly between your devices. No data passes through third-party servers.
+> 🔒 **All transfers happen directly between your devices. No data passes through third-party servers.**
 
-## 📱 Platform Support
+---
 
-| Platform | Status | Notes |
-|:--------:|:------:|-------|
-| 🪟 Windows | ✅ Tested | NSIS installer + ZIP portable |
-| 🤖 Android | ✅ Tested | ARM64 APK |
-| 🍎 macOS | ⚠️ Untested | CI builds ready, feedback welcome |
-| 🐧 Linux x64 | ⚠️ Untested | AppImage / deb / rpm / tar.gz |
-| 🐧 Linux ARM64 | ⚠️ Untested | AppImage / deb (Kylin/UOS compatible) |
+## 🔒 Security
+
+> ⚠️ inout binds to all network interfaces by default (`0.0.0.0`)
+
+| Network | Recommendation |
+|:---|:---:|
+| Home WiFi | ✅ Safe — LAN only |
+| Public WiFi | ⚠️ Enable password auth |
+| Corporate network | ⚠️ Watch firewall policies |
+| Public internet | ❌ Not recommended — use VPN instead |
+
+**Best practices:**
+1. Enable auth in public environments
+2. Stop the server when done
+3. Review access logs periodically
+
+---
+
+## 🔧 Troubleshooting
+
+### Android — Storage Permission
+
+**Symptom:** Can't list files, "Need all files access permission"
+
+**Fix:** Settings → Apps → inout → Permissions → Allow "All files access"
+
+### Port in Use
+
+**Symptom:** Start fails, "Port XXX already in use"
+
+**Fix:** Change port (try 8080–9000 range) or kill the occupying process
+
+### Linux — AppImage Won't Launch
+
+**Symptom:** Double-click does nothing
+
+**Fix:**
+```bash
+chmod +x inout-*.AppImage
+./inout-*.AppImage
+```
+
+### macOS — Developer Verification Blocked
+
+**Symptom:** "Can't verify developer" on open
+
+**Fix:**
+```bash
+xattr -d com.apple.quarantine inout.app
+```
+
+### Windows — Firewall Blocking
+
+**Symptom:** Other devices can't connect
+
+**Fix:** Allow inout through Windows Firewall (you'll be prompted on first launch)
+
+---
+
+## ❓ FAQ
+
+**Q: Does the other side need inout?**
+A: No! Only one device runs inout. Others just open a browser.
+
+**Q: Can I access it remotely?**
+A: LAN by default. For remote access, use ZeroTier / Tailscale / EasyTier.
+
+**Q: Is HTTPS supported?**
+A: Not yet. Planned for a future release.
+
+**Q: Max file size?**
+A: Depends on dufs and browser. Keep individual files under 2GB for best results.
+
+**Q: How many devices can connect at once?**
+A: No hard limit — depends on bandwidth and device performance.
+
+**Q: Are files uploaded to the cloud?**
+A: No! Everything stays local. Transfers are device-to-device.
+
+---
 
 ## 🛠️ Development
 
@@ -87,27 +180,20 @@ A graphical interface built on [dufs](https://github.com/sigoden/dufs) — zero 
 ### Build
 
 ```bash
-# Clone
 git clone https://github.com/zocs/inout.git
 cd inout
-
-# Get dependencies
 flutter pub get
 
 # Run (debug)
 flutter run -d windows
 flutter run -d android
 
-# Windows build
+# Build
 flutter build windows --release
-
-# Android build
 flutter build apk --release
 ```
 
-### Build Scripts
-
-Automated packaging scripts are provided:
+### Packaging Scripts
 
 ```bash
 # Linux (x64 or ARM64)
@@ -122,47 +208,25 @@ Output: AppImage, deb, rpm, tar.gz (Linux) and zip (macOS).
 
 ### CI/CD
 
-GitHub Actions automatically builds all platforms on tag push (`v*`) and creates a release:
+GitHub Actions builds all platforms on tag push (`v*`) and creates a release automatically.
 
-```
-v0.1.1 → build-android → build-windows → build-linux-x64 → build-linux-arm64 → build-macos-arm64 → release
-```
-
-### Android Notes
-
-Android requires `MANAGE_EXTERNAL_STORAGE` permission. On Android 12+ (SELinux), the dufs binary needs:
-
-- `AndroidManifest.xml`: `android:extractNativeLibs="true"`
-- `build.gradle.kts`: `packaging.jniLibs.useLegacyPackaging = true`
-
-The dufs binary runs from the jniLibs path (SELinux-readable).
-
-## 🧱 Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| Framework | [Flutter](https://flutter.dev) 3.41 + Dart |
-| File Server | [dufs](https://github.com/sigoden/dufs) v0.45.0 (Rust) |
-| Design | Material Design 3 |
-| Persistence | SharedPreferences |
-| Window Mgmt | window_manager |
-| Packaging | NSIS (Windows), dpkg (Linux), linuxdeploy (AppImage) |
-
-## 📁 Project Structure
+### Project Structure
 
 ```
 lib/
-├── main.dart                  # Entry point + window init
+├── main.dart                  # Entry + window init
 ├── app.dart                   # MaterialApp + theming
 ├── l10n/app_localizations.dart # i18n (zh/en/zhTW)
 ├── models/server_config.dart  # Config model + persistence
 ├── pages/
-│   ├── home_page.dart         # Home: dir picker / perms / start / QR
+│   ├── home_page.dart         # Home: dir / perms / start / QR
 │   ├── settings_page.dart     # Settings: theme / color / language
 │   └── setup_wizard_page.dart # First-run wizard
 └── services/
     └── dufs_service.dart      # dufs process management
 ```
+
+---
 
 ## 📄 License
 
@@ -172,6 +236,6 @@ lib/
 
 <div align="center">
 
-**[inout](https://github.com/zocs/inout)** — files in and out, that's all.
+**inout** — files in and out, that's all. 🚀
 
 </div>
