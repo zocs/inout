@@ -1,17 +1,22 @@
 package cc.merr.inout
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "cc.merr.inout/native"
+    private val STORAGE_PERMISSION_CODE = 1001
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -29,9 +34,10 @@ class MainActivity : FlutterActivity() {
                     val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         Environment.isExternalStorageManager()
                     } else {
-                        true
+                        // Android < 11: check READ_EXTERNAL_STORAGE runtime permission
+                        ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
                     }
-                    Log.d("inout", "MANAGE_EXTERNAL_STORAGE: $granted")
+                    Log.d("inout", "Storage granted: $granted (API ${Build.VERSION.SDK_INT})")
                     result.success(granted)
                 }
                 "requestStorage" -> {
@@ -43,6 +49,12 @@ class MainActivity : FlutterActivity() {
                         } catch (e: Exception) {
                             startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
                         }
+                    } else {
+                        // Android < 11: request runtime permissions
+                        ActivityCompat.requestPermissions(this, arrayOf(
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        ), STORAGE_PERMISSION_CODE)
                     }
                     result.success(true)
                 }

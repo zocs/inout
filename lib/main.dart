@@ -2,15 +2,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:tray_manager/tray_manager.dart';
 import 'app.dart';
+import 'l10n/app_localizations.dart';
 import 'models/server_config.dart';
 import 'services/dufs_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Windows: frameless window (not available on mobile)
-  if (Platform.isWindows) {
+  // Desktop: frameless window + system tray
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     await windowManager.ensureInitialized();
     const windowOptions = WindowOptions(
       size: Size(420, 740),
@@ -20,6 +22,7 @@ void main() async {
       titleBarStyle: TitleBarStyle.hidden,
     );
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.setPreventClose(true);
       await windowManager.show();
       await windowManager.focus();
     });
@@ -43,10 +46,11 @@ class InoutApp extends StatefulWidget {
   State<InoutApp> createState() => _InoutAppState();
 }
 
-class _InoutAppState extends State<InoutApp> {
+class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
   late ThemeMode _themeMode;
   late String _colorScheme;
   late bool _setupDone;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -54,6 +58,110 @@ class _InoutAppState extends State<InoutApp> {
     _themeMode = _themeModeFromString(widget.config.themeMode);
     _colorScheme = widget.config.colorScheme;
     _setupDone = widget.config.setupDone;
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      windowManager.addListener(this);
+    }
+  }
+
+  bool _trayInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_trayInitialized && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      _trayInitialized = true;
+      _initTray();
+    }
+  }
+
+  Future<void> _initTray() async {
+    try {
+      final dir = await Directory.systemTemp.createTemp('inout_tray');
+      if (Platform.isWindows) {
+        final bytes = await DefaultAssetBundle.of(context).load('assets/icon/tray_icon.ico');
+        final iconFile = File('${dir.path}/tray_icon.ico');
+        await iconFile.writeAsBytes(bytes.buffer.asUint8List());
+        await trayManager.setIcon(iconFile.path);
+      } else {
+        final bytes = await DefaultAssetBundle.of(context).load('assets/icon/app_icon.png');
+        final iconFile = File('${dir.path}/tray_icon.png');
+        await iconFile.writeAsBytes(bytes.buffer.asUint8List());
+        await trayManager.setIcon(iconFile.path);
+      }
+      await trayManager.setToolTip('inout');
+
+      // Small delay before setting context menu (Windows needs icon to be registered first)
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      await trayManager.setContextMenu(Menu(
+        items: [
+          MenuItem(key: 'show', label: 'Show'),
+          MenuItem(key: 'quit', label: 'Quit'),
+        ],
+      ));
+      trayManager.addListener(this);
+      debugPrint('Tray initialized successfully');
+    } catch (e) {
+      debugPrint('Tray init failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    trayManager.removeListener(this);
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      windowManager.removeListener(this);
+    }
+    super.dispose();
+  }
+
+  @override
+  void onWindowClose() async {
+    debugPrint('onWindowClose called, action=${widget.config.closeAction}');
+    final action = widget.config.closeAction;
+    switch (action) {
+      case 'exit':
+        windowManager.destroy();
+        break;
+      case 'tray':
+        windowManager.hide();
+        break;
+      default: // 'ask' — handled by HomePage's close button callback
+        break;
+    }
+  }
+
+  @override
+  void onTrayIconMouseDown() async {
+    // Single click: show and focus window
+    await windowManager.show();
+    await windowManager.focus();
+  }
+
+  @override
+  void onTrayIconRightMouseDown() async {
+    debugPrint('Tray right-click detected, popping up context menu');
+    try {
+      await trayManager.popUpContextMenu();
+      debugPrint('popUpContextMenu completed');
+    } catch (e) {
+      debugPrint('popUpContextMenu error: $e');
+    }
+  }
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) async {
+    debugPrint('Tray menu clicked: ${menuItem.key}');
+    switch (menuItem.key) {
+      case 'show':
+        await windowManager.show();
+        await windowManager.focus();
+        break;
+      case 'quit':
+        await trayManager.destroy();
+        await windowManager.destroy();
+        break;
+    }
   }
 
   ThemeMode _themeModeFromString(String s) {
@@ -97,6 +205,8 @@ class _InoutAppState extends State<InoutApp> {
       onThemeModeChanged: _onThemeChanged,
       onColorChanged: _onColorChanged,
       onSetupDone: _onSetupDone,
+      onCloseRequested: () => onWindowClose(),
+      navigatorKey: _navigatorKey,
     );
   }
 }

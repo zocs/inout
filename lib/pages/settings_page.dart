@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../models/server_config.dart';
@@ -76,7 +75,7 @@ class _SettingsPageState extends State<SettingsPage> {
             border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
           ),
           child: Column(children: [
-            Text('INOUT', style: GoogleFonts.pressStart2p(fontSize: 24, color: Theme.of(context).colorScheme.primary)),
+            Text('INOUT', style: TextStyle(fontFamily: 'PressStart2P', fontSize: 24, color: Theme.of(context).colorScheme.primary)),
             const SizedBox(height: 12),
             Text('v$appVersion', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),
             const SizedBox(height: 8),
@@ -305,6 +304,43 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           );
         }),
+
+
+        // ========== Close Behavior (Desktop only) ==========
+        if (Theme.of(context).platform == TargetPlatform.windows ||
+            Theme.of(context).platform == TargetPlatform.linux ||
+            Theme.of(context).platform == TargetPlatform.macOS) ...[
+          const Divider(height: 24),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(l10n.t('settings.closeBehavior'),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary)),
+          ),
+          ...['ask', 'tray', 'exit'].map((action) {
+            final labels = {
+              'ask': l10n.t('settings.closeAsk'),
+              'tray': l10n.t('settings.closeTray'),
+              'exit': l10n.t('settings.closeExit'),
+            };
+            final icons = {
+              'ask': Icons.help_outline,
+              'tray': Icons.minimize,
+              'exit': Icons.exit_to_app,
+            };
+            final sel = widget.config.closeAction == action;
+            return ListTile(
+              dense: true,
+              leading: Icon(icons[action], size: 20),
+              title: Text(labels[action]!),
+              trailing: sel ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              onTap: () async {
+                setState(() => widget.config.closeAction = action);
+                await widget.config.save();
+              },
+            );
+          }),
+        ],
 
 
       ]),

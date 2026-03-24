@@ -22,6 +22,8 @@ class App extends StatelessWidget {
   final ValueChanged<ThemeMode> onThemeModeChanged;
   final ValueChanged<String> onColorChanged;
   final VoidCallback onSetupDone;
+  final VoidCallback? onCloseRequested;
+  final GlobalKey<NavigatorState>? navigatorKey;
 
   const App({
     super.key,
@@ -32,6 +34,8 @@ class App extends StatelessWidget {
     required this.onThemeModeChanged,
     required this.onColorChanged,
     required this.onSetupDone,
+    this.onCloseRequested,
+    this.navigatorKey,
   });
 
   @override
@@ -39,6 +43,7 @@ class App extends StatelessWidget {
     final seedColor = presetColors[colorScheme] ?? const Color(0xFFFF6B5A);
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'inout',
       debugShowCheckedModeBanner: false,
       locale: _localeFromCode(config.language),
@@ -55,6 +60,7 @@ class App extends StatelessWidget {
               themeMode: themeMode,
               onThemeModeChanged: onThemeModeChanged,
               onColorChanged: onColorChanged,
+              onCloseRequested: onCloseRequested,
             )
           : SetupWizardPage(
               config: config,

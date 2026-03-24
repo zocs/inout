@@ -46,6 +46,12 @@ class ServerConfig {
   /// 是否已完成首次设置
   bool setupDone;
 
+  /// 关闭行为: 'ask'(询问), 'tray'(最小化到托盘), 'exit'(直接退出)
+  String closeAction;
+
+  /// 是否在分享单文件模式（dufs 指定单文件）
+  bool shareSingleFile;
+
   ServerConfig({
     this.path = '',
     this.port = 5000,
@@ -61,6 +67,8 @@ class ServerConfig {
     this.themeMode = 'system',
     this.colorScheme = 'coral',
     this.setupDone = false,
+    this.closeAction = 'ask',
+    this.shareSingleFile = false,
   });
 
   /// 转为 JSON Map
@@ -79,6 +87,8 @@ class ServerConfig {
         'themeMode': themeMode,
         'colorScheme': colorScheme,
         'setupDone': setupDone,
+        'closeAction': closeAction,
+        'shareSingleFile': shareSingleFile,
       };
 
   /// 从 JSON Map 创建实例
@@ -97,6 +107,8 @@ class ServerConfig {
         themeMode: json['themeMode'] as String? ?? 'system',
         colorScheme: json['colorScheme'] as String? ?? 'coral',
         setupDone: json['setupDone'] as bool? ?? false,
+        closeAction: json['closeAction'] as String? ?? 'ask',
+        shareSingleFile: json['shareSingleFile'] as bool? ?? false,
       );
 
   /// 从 SharedPreferences 加载配置

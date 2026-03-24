@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:desktop_drop/desktop_drop.dart';
 import '../l10n/app_localizations.dart';
 import '../models/server_config.dart';
 import '../services/dufs_service.dart';
@@ -14,6 +18,7 @@ class HomePage extends StatefulWidget {
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
   final ValueChanged<String> onColorChanged;
+  final VoidCallback? onCloseRequested;
 
   const HomePage({
     super.key,
@@ -21,6 +26,7 @@ class HomePage extends StatefulWidget {
     required this.themeMode,
     required this.onThemeModeChanged,
     required this.onColorChanged,
+    this.onCloseRequested,
   });
 
   @override
@@ -36,6 +42,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
   final _passwordController = TextEditingController();
   late final TextEditingController _portController;
   int _navIndex = 0;
+  bool _isDragOver = false;
 
   AppLocalizations get l10n => AppLocalizations(_config.language);
 
@@ -73,10 +80,74 @@ class _HomePageState extends State<HomePage> with WindowListener {
     await _config.save();
   }
 
+  Future<void> _handleClose() async {
+    final action = _config.closeAction;
+    debugPrint('HomePage._handleClose: action=$action');
+    if (action == 'exit') {
+      trayManager.destroy().catchError((_) {});
+      windowManager.destroy();
+      return;
+    }
+    if (action == 'tray') {
+      windowManager.hide();
+      return;
+    }
+    // action == 'ask': show dialog (context is inside MaterialApp, has MaterialLocalizations)
+    final result = await _showCloseDialog();
+    debugPrint('Close dialog result: $result');
+    if (result == null) return;
+    final actionResult = result['action'] as String;
+    final dontAsk = result['dontAsk'] as bool;
+    if (actionResult == 'tray') {
+      windowManager.hide();
+    } else {
+      trayManager.destroy().catchError((_) {}); // fire and forget
+      windowManager.destroy();
+    }
+    if (dontAsk) {
+      _config.closeAction = actionResult;
+      await _config.save();
+    }
+  }
+
+  Future<Map<String, dynamic>?> _showCloseDialog() async {
+    bool dontAsk = false;
+    return showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(l10n.t('home.closeTitle')),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            ListTile(
+              leading: const Icon(Icons.minimize),
+              title: Text(l10n.t('home.closeTray')),
+              onTap: () => Navigator.pop(ctx, {'action': 'tray', 'dontAsk': dontAsk}),
+            ),
+            ListTile(
+              leading: const Icon(Icons.exit_to_app),
+              title: Text(l10n.t('home.closeExit')),
+              onTap: () => Navigator.pop(ctx, {'action': 'exit', 'dontAsk': dontAsk}),
+            ),
+            const Divider(),
+            CheckboxListTile(
+              title: Text(l10n.t('home.closeDontAsk')),
+              value: dontAsk,
+              onChanged: (v) => setDialogState(() => dontAsk = v ?? false),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickDirectory() async {
     final result = await FilePicker.platform.getDirectoryPath();
     if (result != null) {
-      setState(() => _config.path = result);
+      setState(() {
+        _config.path = result;
+        _config.shareSingleFile = false;
+      });
       await _saveConfig();
     }
   }
@@ -101,7 +172,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
             _TitleBarButton(icon: Icons.crop_square, onPressed: () async {
               if (await windowManager.isMaximized()) { windowManager.unmaximize(); } else { windowManager.maximize(); }
             }),
-            _TitleBarButton(icon: Icons.close, isClose: true, onPressed: () => windowManager.close()),
+            _TitleBarButton(icon: Icons.close, isClose: true, onPressed: () => _handleClose()),
           ],
         ),
       ),
@@ -137,6 +208,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
   // ==================== Dir Picker ====================
 
   Widget _buildDirPicker() {
+    final isSingleFile = _config.shareSingleFile;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -144,10 +216,12 @@ class _HomePageState extends State<HomePage> with WindowListener {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(children: [
-            Icon(Icons.folder_open, size: 32, color: Theme.of(context).colorScheme.primary),
+            Icon(isSingleFile ? Icons.insert_drive_file : Icons.folder_open,
+                size: 32, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(l10n.t('home.selectDir'), style: Theme.of(context).textTheme.titleSmall),
+              Text(isSingleFile ? l10n.t('home.dropFileSet') : l10n.t('home.selectDir'),
+                  style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 4),
               Text(_config.path.isEmpty ? l10n.t('home.selectDir') : _config.path,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -190,14 +264,19 @@ class _HomePageState extends State<HomePage> with WindowListener {
 
   Widget _buildCustomPerms(DufsService service) {
     final running = service.isRunning;
+    final singleFile = _config.shareSingleFile;
     final items = [
       {'label': l10n.t('home.allowUpload'), 'value': _config.allowUpload, 'icon': Icons.cloud_upload,
+       'disabled': singleFile,
        'onChanged': (v) async { setState(() { _config.allowUpload = v; if (v) { _config.readonly = false; _config.allowSearch = true; } }); await _saveConfig(); _maybeRestart(service); }},
       {'label': l10n.t('home.allowDelete'), 'value': _config.allowDelete, 'icon': Icons.delete_outline,
+       'disabled': singleFile,
        'onChanged': (v) async { setState(() { _config.allowDelete = v; if (v) { _config.readonly = false; _config.allowSearch = true; } }); await _saveConfig(); _maybeRestart(service); }},
       {'label': l10n.t('home.allowSearch'), 'value': _config.allowSearch, 'icon': Icons.search,
+       'disabled': singleFile,
        'onChanged': (v) async { setState(() => _config.allowSearch = v); await _saveConfig(); _maybeRestart(service); }},
       {'label': l10n.t('home.allowArchive'), 'value': _config.allowArchive, 'icon': Icons.folder_zip,
+       'disabled': false,
        'onChanged': (v) async { setState(() => _config.allowArchive = v); await _saveConfig(); _maybeRestart(service); }},
     ];
     return Padding(
@@ -210,14 +289,15 @@ class _HomePageState extends State<HomePage> with WindowListener {
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           ...items.map((item) {
+            final disabled = item['disabled'] as bool;
             return SwitchListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
               secondary: Icon(item['icon'] as IconData, size: 20,
-                  color: running ? Theme.of(context).colorScheme.outline : null),
+                  color: (running || disabled) ? Theme.of(context).colorScheme.outline : null),
               title: Text(item['label'] as String),
               value: item['value'] as bool,
-              onChanged: running ? null : (v) => (item['onChanged'] as Function(bool))(v),
+              onChanged: (running || disabled) ? null : (v) => (item['onChanged'] as Function(bool))(v),
             );
           }),
         ]),
@@ -356,6 +436,79 @@ class _HomePageState extends State<HomePage> with WindowListener {
     );
   }
 
+  // ==================== Multi-NIC Address List ====================
+  Widget _buildAddressList(DufsService service) {
+    if (!service.isRunning || service.allAddresses.length <= 1) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        child: ExpansionTile(
+          title: Row(children: [
+            Icon(Icons.lan, size: 18, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(l10n.t('home.allAddresses'), style: Theme.of(context).textTheme.titleSmall),
+          ]),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          initiallyExpanded: false,
+          children: service.allAddresses.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final ip = entry.value;
+            final ifaceName = idx < service.allInterfaceNames.length ? service.allInterfaceNames[idx] : '';
+            final url = 'http://$ip:${_config.port}';
+            final isDefault = idx == 0;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: InkWell(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: url));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${l10n.t('home.copyUrl')}: $url')),
+                  );
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDefault
+                        ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
+                        : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(children: [
+                    Icon(
+                      isDefault ? Icons.star : Icons.link,
+                      size: 16,
+                      color: isDefault ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(width: 4),
+                    if (ifaceName.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(ifaceName, style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline)),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(child: Text(url,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: isDefault ? FontWeight.w600 : null,
+                            decoration: TextDecoration.underline))),
+                    Icon(Icons.copy, size: 14, color: Theme.of(context).colorScheme.outline),
+                  ]),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
   Widget _stat(BuildContext context, IconData icon, String value, String label) {
     return Column(children: [
       Icon(icon, size: 18, color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7)),
@@ -459,11 +612,68 @@ class _HomePageState extends State<HomePage> with WindowListener {
 
   // ==================== Main Content ====================
 
+  // ==================== Drop Handler ====================
+  Widget _buildDropWrapper({required Widget child}) {
+    // Only enable on desktop platforms
+    final isDesktop = Theme.of(context).platform == TargetPlatform.windows ||
+        Theme.of(context).platform == TargetPlatform.linux ||
+        Theme.of(context).platform == TargetPlatform.macOS;
+    if (!isDesktop) return child;
+
+    return DropTarget(
+      onDragDone: (detail) async {
+        if (detail.files.isNotEmpty) {
+          final file = detail.files.first;
+          final filePath = file.path;
+          bool isFile = false;
+          String dirPath;
+          try {
+            final entityType = await FileSystemEntity.type(filePath);
+            if (entityType == FileSystemEntityType.directory) {
+              dirPath = filePath;
+            } else {
+              dirPath = File(filePath).parent.path;
+              isFile = true;
+            }
+          } catch (_) {
+            dirPath = File(filePath).parent.path;
+            isFile = true;
+          }
+          setState(() {
+            _config.path = dirPath;
+            _config.shareSingleFile = false;
+            _isDragOver = false;
+          });
+          await _saveConfig();
+          if (context.mounted) {
+            final fileName = dirPath.split(Platform.pathSeparator).last;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${l10n.t('home.dropSet')}: $fileName')),
+            );
+            if (isFile) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(l10n.t('home.dropFileWarn')),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+          }
+        }
+      },
+      onDragEntered: (_) => setState(() => _isDragOver = true),
+      onDragExited: (_) => setState(() => _isDragOver = false),
+      child: child,
+    );
+  }
+
   Widget _buildHomeContent() {
     final service = context.watch<DufsService>();
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    return _buildDropWrapper(
+      child: Stack(children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // Title
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
@@ -520,7 +730,9 @@ class _HomePageState extends State<HomePage> with WindowListener {
           ),
         const SizedBox(height: 8),
         // Running card (QR) - appears between button and advanced
-        _buildRunningCard(service),
+        RepaintBoundary(child: _buildRunningCard(service)),
+        // Multi-NIC address list
+        _buildAddressList(service),
         const SizedBox(height: 4),
         // Advanced options (always at bottom)
         ExpansionTile(
@@ -531,7 +743,36 @@ class _HomePageState extends State<HomePage> with WindowListener {
           children: [_buildAdvancedOptions()],
         ),
       ]),
-    );
+    ),
+    // Drag & drop overlay
+    if (_isDragOver)
+      Positioned.fill(
+        child: IgnorePointer(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            margin: const EdgeInsets.all(8),
+            child: Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.file_download_outlined, size: 48,
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6)),
+                const SizedBox(height: 8),
+                Text(l10n.t('home.dropHint'),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.primary)),
+              ]),
+            ),
+          ),
+        ),
+      ),
+  ]),
+);
   }
 
   // ==================== Build ====================
@@ -552,22 +793,12 @@ class _HomePageState extends State<HomePage> with WindowListener {
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
-          if (Theme.of(context).platform == TargetPlatform.windows) _buildTitleBar(),
+          if (Theme.of(context).platform == TargetPlatform.windows ||
+              Theme.of(context).platform == TargetPlatform.linux ||
+              Theme.of(context).platform == TargetPlatform.macOS) _buildTitleBar(),
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              transitionBuilder: (child, animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.03, 0),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-                    child: child,
-                  ),
-                );
-              },
+              duration: const Duration(milliseconds: 150),
               child: KeyedSubtree(
                 key: ValueKey(_navIndex),
                 child: pages[_navIndex],

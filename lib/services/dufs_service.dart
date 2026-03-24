@@ -17,6 +17,9 @@ class DufsService extends ChangeNotifier {
   String? _error;
   int _totalRequests = 0;
   String? _lastActivity;
+  List<String> _allAddresses = [];
+  /// 网卡名称列表，与 allAddresses 一一对应
+  List<String> _allInterfaceNames = [];
 
   bool get isRunning => _isRunning;
   String? get serverUrl => _serverUrl;
@@ -24,6 +27,8 @@ class DufsService extends ChangeNotifier {
   String? get error => _error;
   int get totalRequests => _totalRequests;
   String? get lastActivity => _lastActivity;
+  List<String> get allAddresses => _allAddresses;
+  List<String> get allInterfaceNames => _allInterfaceNames;
 
   void _log(String msg) {
     debugPrint(msg);
@@ -32,6 +37,27 @@ class DufsService extends ChangeNotifier {
 
   Future<String?> _getWifiIP() async {
     try { return await NetworkInfo().getWifiIP(); } catch (_) { return null; }
+  }
+
+  /// 获取所有可用网络接口的 IPv4 地址及网卡名称
+  Future<Map<String, List<String>>> _getAllAddresses() async {
+    final addresses = <String>[];
+    final names = <String>[];
+    try {
+      final interfaces = await NetworkInterface.list(
+        includeLoopback: false,
+        type: InternetAddressType.IPv4,
+      );
+      for (final iface in interfaces) {
+        for (final addr in iface.addresses) {
+          if (addr.address != '127.0.0.1' && !addresses.contains(addr.address)) {
+            addresses.add(addr.address);
+            names.add(iface.name);
+          }
+        }
+      }
+    } catch (_) {}
+    return {'addresses': addresses, 'names': names};
   }
 
   Future<bool> _isPortAvailable(int port) async {
@@ -44,18 +70,63 @@ class DufsService extends ChangeNotifier {
     }
   }
 
+  /// 清理可能残留的 dufs 孤儿进程（占用了目标端口的）
+  Future<void> _killOrphanDufs(int port) async {
+    try {
+      if (Platform.isWindows) {
+        // Find process using the port and kill it if it's dufs
+        final result = await Process.run('netstat', ['-ano', '-p', 'TCP']);
+        final lines = (result.stdout as String).split('\n');
+        for (final line in lines) {
+          if (line.contains(':$port ') && line.contains('LISTENING')) {
+            final parts = line.trim().split(RegExp(r'\s+'));
+            final pid = int.tryParse(parts.last);
+            if (pid != null) {
+              // Check if it's a dufs process
+              final taskResult = await Process.run('tasklist', ['/FI', 'PID eq $pid', '/FO', 'CSV']);
+              final output = taskResult.stdout as String;
+              if (output.toLowerCase().contains('dufs')) {
+                _log('Killing orphan dufs process PID=$pid on port $port');
+                await Process.run('taskkill', ['/F', '/PID', '$pid']);
+              }
+            }
+          }
+        }
+      } else if (Platform.isAndroid) {
+        // On Android, dufs runs as child process of the app, so killing the app kills dufs
+      } else {
+        // Linux/macOS: find and kill dufs on the port
+        await Process.run('fuser', ['-k', '$port/tcp']).catchError((_) {});
+      }
+    } catch (e) {
+      _log('Failed to kill orphan dufs: $e');
+    }
+  }
+
   Future<void> startServer(ServerConfig config) async {
     if (_isRunning) return;
     if (config.path.isEmpty) { _error = 'No directory'; notifyListeners(); return; }
-    if (!await Directory(config.path).exists()) { _error = 'Directory not found'; notifyListeners(); return; }
+    // 单文件模式检查文件是否存在，目录模式检查目录是否存在
+    if (config.shareSingleFile) {
+      if (!await File(config.path).exists()) { _error = 'File not found'; notifyListeners(); return; }
+      final parentDir = p.dirname(config.path);
+      if (!await Directory(parentDir).exists()) { _error = 'Parent directory not found'; notifyListeners(); return; }
+    } else {
+      if (!await Directory(config.path).exists()) { _error = 'Directory not found'; notifyListeners(); return; }
+    }
     // Validate permission consistency
     final permError = config.validatePermissions();
     if (permError != null) { _error = permError; notifyListeners(); return; }
-    // Check port availability
+    // Check port availability, kill orphan dufs if needed
     if (!await _isPortAvailable(config.port)) {
-      _error = '端口 ${config.port} 已被占用，请更换端口';
-      notifyListeners();
-      return;
+      _log('Port ${config.port} in use, attempting to kill orphan dufs...');
+      await _killOrphanDufs(config.port);
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!await _isPortAvailable(config.port)) {
+        _error = '端口 ${config.port} 已被占用，请更换端口';
+        notifyListeners();
+        return;
+      }
     }
     try {
       _error = null; notifyListeners();
@@ -72,8 +143,23 @@ class DufsService extends ChangeNotifier {
       await _startDufsProcess(config);
       _isRunning = true;
       _localIp = await _getWifiIP();
-      _serverUrl = 'http://${_localIp ?? '127.0.0.1'}:${config.port}';
-      _log('server: $_serverUrl');
+      final allNet = await _getAllAddresses();
+      _allAddresses = allNet['addresses'] ?? [];
+      _allInterfaceNames = allNet['names'] ?? [];
+      // 确保默认 WiFi IP 在列表首位
+      if (_localIp != null && _allAddresses.contains(_localIp)) {
+        final idx = _allAddresses.indexOf(_localIp!);
+        _allAddresses.removeAt(idx);
+        _allInterfaceNames.removeAt(idx);
+        _allAddresses.insert(0, _localIp!);
+        _allInterfaceNames.insert(0, 'WiFi');
+      } else if (_localIp != null && !_allAddresses.contains(_localIp)) {
+        _allAddresses.insert(0, _localIp!);
+        _allInterfaceNames.insert(0, 'WiFi');
+      }
+      if (_allAddresses.isEmpty) { _allAddresses.add('127.0.0.1'); _allInterfaceNames.add('Local'); }
+      _serverUrl = 'http://${_allAddresses.first}:${config.port}';
+      _log('server: $_serverUrl, all: $_allAddresses');
       notifyListeners();
     } catch (e) {
       _error = 'Start failed: $e'; _isRunning = false; notifyListeners();
@@ -113,7 +199,12 @@ class DufsService extends ChangeNotifier {
     }
     if (c.auth != null && c.auth!.isNotEmpty) args.addAll(['--auth', '${c.auth!}@/:rw']);
     if (c.cors) args.add('--enable-cors');
-    args.add(c.path);
+    // dufs 只能服务目录，单文件模式传父目录
+    if (c.shareSingleFile) {
+      args.add(p.dirname(c.path));
+    } else {
+      args.add(c.path);
+    }
     return args;
   }
 
@@ -124,8 +215,10 @@ class DufsService extends ChangeNotifier {
       throw Exception('dufs 服务组件缺失，请重新安装应用。路径: $binPath');
     }
     final args = _buildArgs(config);
+    // dufs 只能服务目录，单文件模式用父目录作 root
+    final workDir = config.shareSingleFile ? p.dirname(config.path) : config.path;
     _log('dufs: $binPath ${args.join(' ')}');
-    _process = await Process.start(binPath, args, workingDirectory: config.path);
+    _process = await Process.start(binPath, args, workingDirectory: workDir);
     _process!.stdout.listen((d) {
       final line = String.fromCharCodes(d).trim();
       _log('out: $line');
@@ -155,6 +248,7 @@ class DufsService extends ChangeNotifier {
     if (!_isRunning) return;
     if (_process != null) { _process!.kill(); _process = null; }
     _isRunning = false; _serverUrl = null; _totalRequests = 0; _lastActivity = null;
+    _allAddresses = []; _allInterfaceNames = [];
     notifyListeners();
   }
 
