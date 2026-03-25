@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'models/server_config.dart';
 import 'pages/home_page.dart';
 import 'pages/setup_wizard_page.dart';
+import 'pages/splash_page.dart';
 
 const appVersion = '0.1.2';
 
@@ -54,20 +55,22 @@ class App extends StatelessWidget {
       darkTheme: _buildTheme(
         ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.dark),
       ),
-      home: setupDone
-          ? HomePage(
-              config: config,
-              themeMode: themeMode,
-              onThemeModeChanged: onThemeModeChanged,
-              onColorChanged: onColorChanged,
-              onCloseRequested: onCloseRequested,
-            )
-          : SetupWizardPage(
-              config: config,
-              onThemeModeChanged: onThemeModeChanged,
-              onColorChanged: onColorChanged,
-              onSetupDone: onSetupDone,
-            ),
+      home: SplashPage(
+        child: setupDone
+            ? HomePage(
+                config: config,
+                themeMode: themeMode,
+                onThemeModeChanged: onThemeModeChanged,
+                onColorChanged: onColorChanged,
+                onCloseRequested: onCloseRequested,
+              )
+            : SetupWizardPage(
+                config: config,
+                onThemeModeChanged: onThemeModeChanged,
+                onColorChanged: onColorChanged,
+                onSetupDone: onSetupDone,
+              ),
+      ),
     );
   }
 
