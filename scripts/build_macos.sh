@@ -13,13 +13,18 @@ ARCHIVE_NAME="${APP_NAME}-${VERSION}-macos-${DISPLAY_ARCH}"
 
 echo "Building inout ${VERSION} for macOS ${DISPLAY_ARCH}..."
 
-# Download dufs binary
-DUFS_URL="https://github.com/sigoden/dufs/releases/download/v0.45.0/dufs-v0.45.0-${DARWIN_ARCH}.tar.gz"
-echo "Downloading dufs for ${DARWIN_ARCH}..."
-curl -sL "$DUFS_URL" | tar xz -C /tmp/
-mkdir -p assets/dufs
-cp /tmp/dufs "assets/dufs/dufs-macos-${DISPLAY_ARCH}"
-chmod +x "assets/dufs/dufs-macos-${DISPLAY_ARCH}"
+# Download dufs binary (skip if already present in assets/dufs/)
+DUFS_LOCAL="assets/dufs/dufs-macos-${DISPLAY_ARCH}"
+if [ -f "$DUFS_LOCAL" ]; then
+  echo "Using existing dufs binary: $DUFS_LOCAL"
+else
+  DUFS_URL="https://github.com/sigoden/dufs/releases/download/v0.45.0/dufs-v0.45.0-${DARWIN_ARCH}.tar.gz"
+  echo "Downloading dufs for ${DARWIN_ARCH}..."
+  curl -sL "$DUFS_URL" | tar xz -C /tmp/
+  mkdir -p assets/dufs
+  cp /tmp/dufs "$DUFS_LOCAL"
+  chmod +x "$DUFS_LOCAL"
+fi
 
 # Build Flutter macOS
 flutter build macos --release
