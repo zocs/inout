@@ -167,17 +167,17 @@ jobs:
           body: |
             🤖 **Automated build & release by GitHub Actions** | **此版本由 GitHub Actions 自动化构建并发布**
 
-            | Platform | Files |
-            |----------|-------|
-            | Android | `.apk` |
-            | iOS | `.zip` (unsigned app bundle) — ⚠️ 需自行签名 |
-            | Windows x64 | `.exe` (installer) + `.zip` (portable) |
-            | macOS ARM64 | `.zip` (app bundle) — ⚠️ untested |
-            | Linux x64 | `.AppImage` + `.deb` + `.tar.gz` |
-            | Linux ARM64 | `.AppImage` + `.deb` + `.tar.gz` |
+            | Platform | Files | Status |
+            |----------|-------|--------|
+            | Android | `.apk` | ✅ |
+            | iOS | `.zip` (app bundle) | ⚠️ 未签名，未实机测试 |
+            | Windows x64 | `.exe` (installer) + `.zip` (portable) | ✅ |
+            | macOS ARM64 | `.zip` (app bundle) | ⚠️ 未签名，未实机测试 |
+            | Linux x64 | `.AppImage` + `.deb` + `.tar.gz` | ✅ |
+            | Linux ARM64 | `.AppImage` + `.deb` + `.tar.gz` | ✅ |
 
-            > 💡 AppImage requires no dependencies, works on any Linux distro.
-            > 🍎 iOS build is unsigned. To install: use Xcode to sign with your developer certificate, or use `ios-deploy`.
+            > 💡 AppImage 无需依赖，适用于所有 Linux 发行版。
+            > 🍎 iOS/macOS 构建未签名。安装方式：Xcode 签名后安装，或使用 `ios-deploy` / `xattr -cr`。
           files: |
             artifacts/**/*.AppImage
             artifacts/**/*.deb
