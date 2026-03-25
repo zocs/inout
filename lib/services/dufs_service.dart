@@ -78,9 +78,15 @@ class DufsService extends ChangeNotifier {
     try {
       if (Platform.isAndroid) {
         await Process.run('pkill', ['-f', 'libdufs.so']).catchError((_) => ProcessResult(0, 1, '', ''));
-      } else if (Platform.isLinux || Platform.isMacOS) {
+      } else if (Platform.isLinux) {
         await Process.run('fuser', ['-k', '$port/tcp']).catchError((_) => ProcessResult(0, 1, '', ''));
+      } else if (Platform.isMacOS) {
+        await Process.run('lsof', ['-ti', ':$port']).then((r) {
+          final pid = r.stdout.toString().trim();
+          if (pid.isNotEmpty) Process.run('kill', [pid]);
+        }).catchError((_) {});
       }
+      // iOS: no shell commands available, orphan processes die with the app
       _log('Cleaned up orphan on port $port');
     } catch (e) {
       _log('Failed to clean orphan on port $port: $e');
@@ -112,8 +118,13 @@ class DufsService extends ChangeNotifier {
       } else if (Platform.isAndroid) {
         // On Android, kill any dufs process that might be orphaned
         await Process.run('pkill', ['-f', 'libdufs.so']).catchError((_) => ProcessResult(0, 1, '', ''));
-      } else {
-        // Linux/macOS: find and kill dufs on the port
+      } else if (Platform.isMacOS) {
+        await Process.run('lsof', ['-ti', ':$port']).then((r) {
+          final pid = r.stdout.toString().trim();
+          if (pid.isNotEmpty) Process.run('kill', [pid]);
+        }).catchError((_) {});
+      } else if (Platform.isLinux) {
+        // Linux: find and kill dufs on the port
         await Process.run('fuser', ['-k', '$port/tcp']).catchError((_) => ProcessResult(0, 1, '', ''));
       }
     } catch (e) {
@@ -203,6 +214,10 @@ class DufsService extends ChangeNotifier {
       final nativeDir = await _ch.invokeMethod<String>('getNativeLibraryDir');
       _log('nativeLibraryDir: $nativeDir');
       return '$nativeDir/libdufs.so';
+    } else if (Platform.isIOS) {
+      // iOS: dufs binary bundled in Frameworks directory
+      final frameworksDir = p.dirname(Platform.resolvedExecutable);
+      return p.join(frameworksDir, 'dufs');
     } else {
       // Linux & macOS: dufs binary next to the app executable
       final exeDir = File(Platform.resolvedExecutable).parent.path;
