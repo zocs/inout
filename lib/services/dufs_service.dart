@@ -73,20 +73,23 @@ class DufsService extends ChangeNotifier {
   /// 检查端口是否被占用（公共方法，用于恢复状态检测）
   Future<bool> isPortInUse(int port) async => !(await _isPortAvailable(port));
 
-  /// 强制清理占用端口的孤儿进程
+  /// 强制清理占用端口的 dufs 孤儿进程
   Future<void> killOrphanOnPort(int port) async {
     try {
       if (Platform.isAndroid) {
         await Process.run('pkill', ['-f', 'libdufs.so']).catchError((_) => ProcessResult(0, 1, '', ''));
-      } else if (Platform.isLinux) {
-        await Process.run('fuser', ['-k', '$port/tcp']).catchError((_) => ProcessResult(0, 1, '', ''));
-      } else if (Platform.isMacOS) {
-        await Process.run('lsof', ['-ti', ':$port']).then((r) {
-          final pid = r.stdout.toString().trim();
-          if (pid.isNotEmpty) Process.run('kill', [pid]);
-        }).catchError((_) {});
+      } else if (Platform.isLinux || Platform.isMacOS) {
+        final r = await Process.run('lsof', ['-ti', ':$port']).catchError((_) => ProcessResult(0, 1, '', ''));
+        final pids = r.stdout.toString().trim().split('\n');
+        for (final pid in pids) {
+          if (pid.isEmpty) continue;
+          final cmd = await Process.run('ps', ['-p', pid, '-o', 'comm=']).catchError((_) => ProcessResult(0, 1, '', ''));
+          if (cmd.stdout.toString().toLowerCase().contains('dufs')) {
+            _log('Killing orphan dufs PID=$pid on port $port');
+            await Process.run('kill', [pid]).catchError((_) => ProcessResult(0, 1, '', ''));
+          }
+        }
       }
-      // iOS: no shell commands available, orphan processes die with the app
       _log('Cleaned up orphan on port $port');
     } catch (e) {
       _log('Failed to clean orphan on port $port: $e');
@@ -118,14 +121,17 @@ class DufsService extends ChangeNotifier {
       } else if (Platform.isAndroid) {
         // On Android, kill any dufs process that might be orphaned
         await Process.run('pkill', ['-f', 'libdufs.so']).catchError((_) => ProcessResult(0, 1, '', ''));
-      } else if (Platform.isMacOS) {
-        await Process.run('lsof', ['-ti', ':$port']).then((r) {
-          final pid = r.stdout.toString().trim();
-          if (pid.isNotEmpty) Process.run('kill', [pid]);
-        }).catchError((_) {});
-      } else if (Platform.isLinux) {
-        // Linux: find and kill dufs on the port
-        await Process.run('fuser', ['-k', '$port/tcp']).catchError((_) => ProcessResult(0, 1, '', ''));
+      } else if (Platform.isMacOS || Platform.isLinux) {
+        final r = await Process.run('lsof', ['-ti', ':$port']).catchError((_) => ProcessResult(0, 1, '', ''));
+        final pids = r.stdout.toString().trim().split('\n');
+        for (final pid in pids) {
+          if (pid.isEmpty) continue;
+          final cmd = await Process.run('ps', ['-p', pid, '-o', 'comm=']).catchError((_) => ProcessResult(0, 1, '', ''));
+          if (cmd.stdout.toString().toLowerCase().contains('dufs')) {
+            _log('Killing orphan dufs PID=$pid on port $port');
+            await Process.run('kill', [pid]).catchError((_) => ProcessResult(0, 1, '', ''));
+          }
+        }
       }
     } catch (e) {
       _log('Failed to kill orphan dufs: $e');
@@ -233,6 +239,7 @@ class DufsService extends ChangeNotifier {
       if (c.allowDelete) args.add('--allow-delete');
       if (c.allowSearch) args.add('--allow-search');
       if (c.allowArchive) args.add('--allow-archive');
+      if (c.allowSymlink) args.add('--allow-symlink');
     }
     if (c.auth != null && c.auth!.isNotEmpty) args.addAll(['--auth', '${c.auth!}@/:rw']);
     if (c.cors) args.add('--enable-cors');
@@ -283,7 +290,12 @@ class DufsService extends ChangeNotifier {
 
   Future<void> stopServer() async {
     if (!_isRunning) return;
-    if (_process != null) { _process!.kill(); _process = null; }
+    if (_process != null) {
+      _process!.kill();
+      // Wait briefly for port release
+      try { await _process!.exitCode.timeout(const Duration(seconds: 2)); } catch (_) {}
+      _process = null;
+    }
     if (Platform.isAndroid) {
       _ch.invokeMethod('stopForegroundService').catchError((_) {});
     }

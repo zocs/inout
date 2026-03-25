@@ -678,25 +678,16 @@ class _HomePageState extends State<HomePage> with WindowListener, WidgetsBinding
             isFile = true;
           }
           setState(() {
-            _config.path = dirPath;
-            _config.shareSingleFile = false;
+            _config.path = isFile ? filePath : dirPath;
+            _config.shareSingleFile = isFile;
             _isDragOver = false;
           });
-          final fileName = dirPath.split(Platform.pathSeparator).last;
-          final fileDropped = isFile;
+          final displayName = (isFile ? filePath : dirPath).split(Platform.pathSeparator).last;
           await _saveConfig();
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${l10n.t('home.dropSet')}: $fileName')),
+            SnackBar(content: Text('${l10n.t(isFile ? 'home.dropFileSet' : 'home.dropSet')}: $displayName')),
           );
-          if (fileDropped) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.t('home.dropFileWarn')),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
         }
       },
       onDragEntered: (_) => setState(() => _isDragOver = true),

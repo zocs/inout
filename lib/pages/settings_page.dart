@@ -30,7 +30,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   static const _ch = MethodChannel('cc.merr.inout/native');
   // Cache permission state across page rebuilds
-  static bool? _cachedStorageGranted;
+  bool? _cachedStorageGranted;
 
   final _languages = [
     {'code': 'zh', 'name': '简体中文'},
@@ -215,7 +215,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   FilledButton.tonal(
                     onPressed: (_cachedStorageGranted == null) ? _checkStorage : _requestStorage,
                     child: Text(
-                      (_cachedStorageGranted == null) ? l10n.t('settings.checkPerm') : l10n.t('settings.checkPerm'),
+                      (_cachedStorageGranted == null) ? l10n.t('settings.checkPerm') : l10n.t('settings.grantPerm'),
                       style: const TextStyle(fontSize: 12)),
                   ),
                 if (_cachedStorageGranted ?? false)
