@@ -175,7 +175,29 @@ class DufsService extends ChangeNotifier {
           return;
         }
       }
-      await _startDufsProcess(config);
+      if (Platform.isAndroid) {
+        // Android: start dufs via Native Service (process lives in Service, not Dart)
+        final args = _buildArgs(config);
+        await _ch.invokeMethod('startForegroundService', {
+          'port': config.port,
+          'path': config.path,
+          'args': args,
+        });
+        // Startup verification: wait for Native Service to start dufs, then confirm
+        await Future.delayed(const Duration(milliseconds: 500));
+        final info = await _ch.invokeMethod<Map>('getServiceInfo');
+        if (info == null || info['isRunning'] != true) {
+          final svcError = info?['error'] as String? ?? '';
+          _error = '服务启动失败${svcError.isNotEmpty ? ': $svcError' : ''}';
+          _isRunning = false;
+          notifyListeners();
+          return;
+        }
+      } else {
+        // Desktop/iOS: start dufs as child process
+        await _startDufsProcess(config);
+      }
+
       _isRunning = true;
       _localIp = await _getWifiIP();
       final allNet = await _getAllAddresses();
@@ -195,10 +217,6 @@ class DufsService extends ChangeNotifier {
       if (_allAddresses.isEmpty) { _allAddresses.add('127.0.0.1'); _allInterfaceNames.add('Local'); }
       _serverUrl = 'http://${_allAddresses.first}:${config.port}';
       _log('server: $_serverUrl, all: $_allAddresses');
-      // Start Android foreground service to keep dufs alive
-      if (Platform.isAndroid) {
-        _ch.invokeMethod('startForegroundService', {'port': config.port, 'path': config.path}).catchError((_) {});
-      }
       notifyListeners();
     } catch (e) {
       _error = 'Start failed: $e'; _isRunning = false; notifyListeners();
@@ -304,27 +322,36 @@ class DufsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 恢复到孤儿 dufs 进程的状态（Activity 重建后端口仍被占用）
-  Future<void> restoreFromOrphan(int port) async {
-    _isRunning = true;
-    _localIp = await _getWifiIP();
-    final allNet = await _getAllAddresses();
-    _allAddresses = allNet['addresses'] ?? [];
-    _allInterfaceNames = allNet['names'] ?? [];
-    if (_localIp != null && _allAddresses.contains(_localIp)) {
-      final idx = _allAddresses.indexOf(_localIp!);
-      _allAddresses.removeAt(idx);
-      _allInterfaceNames.removeAt(idx);
-      _allAddresses.insert(0, _localIp!);
-      _allInterfaceNames.insert(0, 'WiFi');
-    } else if (_localIp != null && !_allAddresses.contains(_localIp)) {
-      _allAddresses.insert(0, _localIp!);
-      _allInterfaceNames.insert(0, 'WiFi');
+  /// 恢复到 Native Service 管理的 dufs 进程状态（Activity 重建后查询 Service）
+  Future<void> restoreFromService() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final info = await _ch.invokeMethod<Map>('getServiceInfo');
+      if (info != null && info['isRunning'] == true) {
+        final port = info['port'] as int? ?? 0;
+        _localIp = await _getWifiIP();
+        final allNet = await _getAllAddresses();
+        _allAddresses = allNet['addresses'] ?? [];
+        _allInterfaceNames = allNet['names'] ?? [];
+        if (_localIp != null && _allAddresses.contains(_localIp)) {
+          final idx = _allAddresses.indexOf(_localIp!);
+          _allAddresses.removeAt(idx);
+          _allInterfaceNames.removeAt(idx);
+          _allAddresses.insert(0, _localIp!);
+          _allInterfaceNames.insert(0, 'WiFi');
+        } else if (_localIp != null && !_allAddresses.contains(_localIp)) {
+          _allAddresses.insert(0, _localIp!);
+          _allInterfaceNames.insert(0, 'WiFi');
+        }
+        if (_allAddresses.isEmpty) { _allAddresses.add('127.0.0.1'); _allInterfaceNames.add('Local'); }
+        _serverUrl = 'http://${_allAddresses.first}:$port';
+        _isRunning = true;
+        _log('restored from native service: $_serverUrl');
+        notifyListeners();
+      }
+    } catch (e) {
+      _log('Failed to restore from service: $e');
     }
-    if (_allAddresses.isEmpty) { _allAddresses.add('127.0.0.1'); _allInterfaceNames.add('Local'); }
-    _serverUrl = 'http://${_allAddresses.first}:$port';
-    _log('restored orphan dufs: $_serverUrl');
-    notifyListeners();
   }
 
   @override

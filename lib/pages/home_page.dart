@@ -42,6 +42,7 @@ class _HomePageState extends State<HomePage> with WindowListener, WidgetsBinding
   late final TextEditingController _portController;
   int _navIndex = 0;
   bool _isDragOver = false;
+  static const _ch = MethodChannel('cc.merr.inout/native');
 
   AppLocalizations get l10n => AppLocalizations(_config.language);
 
@@ -81,22 +82,37 @@ class _HomePageState extends State<HomePage> with WindowListener, WidgetsBinding
   }
 
   /// App 恢复前台时检测并恢复服务状态
-  /// 策略：如果之前在运行，清理孤儿进程后重新启动，保证服务可靠
+  /// 策略：查询 Native Service 状态，如果在跑则同步 UI；否则清理后重启
   Future<void> _checkServerOnResume() async {
     if (!Platform.isAndroid) return;
     final service = context.read<DufsService>();
-    if (service.isRunning) return;
 
-    // Check if server was running before (persisted) and port is stuck
+    // 1. Check if Native Service is still running (the source of truth on Android)
+    final info = await _ch.invokeMethod<Map>('getServiceInfo');
+    if (info != null && info['isRunning'] == true) {
+      debugPrint('Native service running on resume, restoring UI state');
+      if (!service.isRunning) {
+        await service.restoreFromService();
+      }
+      return;
+    }
+
+    // 2. Native Service not running — if we think we're running, clean up
+    if (service.isRunning) {
+      debugPrint('Service reports not running but Dart thinks it is, cleaning up');
+      await service.stopServer();
+      return;
+    }
+
+    // 3. Check for orphan dufs on the port
     final inUse = await service.isPortInUse(_config.port);
     if (inUse) {
       debugPrint('Port ${_config.port} in use on resume, killing orphan dufs');
       await service.killOrphanOnPort(_config.port);
-      // Brief wait for port release
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
-    // If server was running before activity was destroyed, restart it
+    // 4. If server was running before activity was destroyed, restart it
     if (_serverWasRunning) {
       debugPrint('Restarting dufs after activity resume');
       _serverWasRunning = false;

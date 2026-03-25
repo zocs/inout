@@ -1,8 +1,6 @@
 package cc.merr.inout
 
 import android.Manifest
-import android.app.ActivityManager
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -61,28 +59,36 @@ class MainActivity : FlutterActivity() {
                 "startForegroundService" -> {
                     val port = call.argument<Int>("port") ?: 0
                     val path = call.argument<String>("path") ?: ""
+                    val args = call.argument<List<String>>("args")?.toTypedArray() ?: emptyArray()
                     val intent = Intent(this, DufsForegroundService::class.java)
                     intent.putExtra("port", port)
                     intent.putExtra("path", path)
+                    intent.putExtra("args", args)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startForegroundService(intent)
                     } else {
                         startService(intent)
                     }
-                    Log.d("inout", "Foreground service started: port=$port")
+                    Log.d("inout", "Foreground service start requested: port=$port")
                     result.success(true)
                 }
                 "stopForegroundService" -> {
                     val intent = Intent(this, DufsForegroundService::class.java)
                     stopService(intent)
-                    Log.d("inout", "Foreground service stopped")
+                    Log.d("inout", "Foreground service stop requested")
                     result.success(true)
                 }
                 "isServiceRunning" -> {
-                    val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-                    val running = manager.getRunningServices(Integer.MAX_VALUE)
-                        .any { it.service.className == DufsForegroundService::class.java.name }
-                    result.success(running)
+                    result.success(DufsForegroundService.isRunning)
+                }
+                "getServiceInfo" -> {
+                    val info = hashMapOf<String, Any>(
+                        "isRunning" to DufsForegroundService.isRunning,
+                        "port" to DufsForegroundService.currentPort,
+                        "path" to DufsForegroundService.currentPath,
+                        "error" to (DufsForegroundService.lastError ?: "")
+                    )
+                    result.success(info)
                 }
                 else -> result.notImplemented()
             }
