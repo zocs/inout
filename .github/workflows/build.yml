@@ -118,9 +118,41 @@ jobs:
           name: macos-arm64
           path: build/macos/output/*
 
+  build-ios:
+    name: iOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.5'
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+      - name: Compile dufs for iOS
+        run: |
+          git clone --depth 1 --branch v0.45.0 https://github.com/sigoden/dufs.git /tmp/dufs
+          cd /tmp/dufs
+          cargo build --release --target aarch64-apple-ios
+          mkdir -p "$GITHUB_WORKSPACE/ios/Frameworks"
+          cp target/aarch64-apple-ios/release/dufs "$GITHUB_WORKSPACE/ios/Frameworks/dufs"
+      - name: Build iOS (no codesign)
+        run: |
+          flutter build ios --release --no-codesign
+          mkdir -p build/ios/output
+          APP_NAME="inout"
+          VERSION=$(grep 'version:' pubspec.yaml | head -1 | awk '{print $2}' | tr -d '+')
+          cp -r build/ios/iphoneos/Runner.app "build/ios/output/${APP_NAME}-${VERSION}-ios-arm64.app"
+          cd build/ios/output && zip -r -y "${APP_NAME}-${VERSION}-ios-arm64.zip" "${APP_NAME}-${VERSION}-ios-arm64.app"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: build/ios/output/*
+
   release:
     name: Release
-    needs: [build-android, build-windows, build-linux-x64, build-linux-arm64, build-macos-arm64]
+    needs: [build-android, build-windows, build-linux-x64, build-linux-arm64, build-macos-arm64, build-ios]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -138,12 +170,14 @@ jobs:
             | Platform | Files |
             |----------|-------|
             | Android | `.apk` |
+            | iOS | `.zip` (unsigned app bundle) — ⚠️ 需自行签名 |
             | Windows x64 | `.exe` (installer) + `.zip` (portable) |
             | macOS ARM64 | `.zip` (app bundle) — ⚠️ untested |
             | Linux x64 | `.AppImage` + `.deb` + `.tar.gz` |
             | Linux ARM64 | `.AppImage` + `.deb` + `.tar.gz` |
 
-            > 💡 AppImage requires no dependencies, works on any Linux distro. For Chinese domestic distros (Kylin, UOS), use `.AppImage` or `.deb`.
+            > 💡 AppImage requires no dependencies, works on any Linux distro.
+            > 🍎 iOS build is unsigned. To install: use Xcode to sign with your developer certificate, or use `ios-deploy`.
           files: |
             artifacts/**/*.AppImage
             artifacts/**/*.deb
