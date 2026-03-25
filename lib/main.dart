@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'app.dart';
-import 'l10n/app_localizations.dart';
 import 'models/server_config.dart';
 import 'services/dufs_service.dart';
 
@@ -76,16 +75,19 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
 
   Future<void> _initTray() async {
     try {
+      // Load asset bytes synchronously from context, before any other awaits
+      final assetBundle = DefaultAssetBundle.of(context);
+      final icoBytes = await assetBundle.load('assets/icon/tray_icon.ico');
+      final pngBytes = await assetBundle.load('assets/icon/app_icon.png');
+      if (!mounted) return;
       final dir = await Directory.systemTemp.createTemp('inout_tray');
       if (Platform.isWindows) {
-        final bytes = await DefaultAssetBundle.of(context).load('assets/icon/tray_icon.ico');
         final iconFile = File('${dir.path}/tray_icon.ico');
-        await iconFile.writeAsBytes(bytes.buffer.asUint8List());
+        await iconFile.writeAsBytes(icoBytes.buffer.asUint8List());
         await trayManager.setIcon(iconFile.path);
       } else {
-        final bytes = await DefaultAssetBundle.of(context).load('assets/icon/app_icon.png');
         final iconFile = File('${dir.path}/tray_icon.png');
-        await iconFile.writeAsBytes(bytes.buffer.asUint8List());
+        await iconFile.writeAsBytes(pngBytes.buffer.asUint8List());
         await trayManager.setIcon(iconFile.path);
       }
       await trayManager.setToolTip('inout');

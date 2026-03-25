@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +32,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with WindowListener {
+class _HomePageState extends State<HomePage> with WindowListener, WidgetsBindingObserver {
   late ServerConfig _config;
   bool _showAdvanced = false;
   bool _enableAuth = false;
@@ -50,6 +49,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
   void initState() {
     super.initState();
     windowManager.addListener(this);
+    WidgetsBinding.instance.addObserver(this);
     _config = widget.config;
     _portController = TextEditingController(text: _config.port.toString());
     if (_config.auth != null && _config.auth!.contains(':')) {
@@ -62,12 +62,52 @@ class _HomePageState extends State<HomePage> with WindowListener {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     windowManager.removeListener(this);
     _usernameController.dispose();
     _passwordController.dispose();
     _portController.dispose();
     super.dispose();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // Remember if server was running when app goes to background
+      _serverWasRunning = context.read<DufsService>().isRunning;
+    } else if (state == AppLifecycleState.resumed) {
+      _checkServerOnResume();
+    }
+  }
+
+  /// App 恢复前台时检测并恢复服务状态
+  /// 策略：如果之前在运行，清理孤儿进程后重新启动，保证服务可靠
+  Future<void> _checkServerOnResume() async {
+    if (!Platform.isAndroid) return;
+    final service = context.read<DufsService>();
+    if (service.isRunning) return;
+
+    // Check if server was running before (persisted) and port is stuck
+    final inUse = await service.isPortInUse(_config.port);
+    if (inUse) {
+      debugPrint('Port ${_config.port} in use on resume, killing orphan dufs');
+      await service.killOrphanOnPort(_config.port);
+      // Brief wait for port release
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // If server was running before activity was destroyed, restart it
+    if (_serverWasRunning) {
+      debugPrint('Restarting dufs after activity resume');
+      _serverWasRunning = false;
+      await _saveConfig();
+      if (_enableAuth && _config.auth == null) return;
+      await service.startServer(_config);
+    }
+  }
+
+  /// 追踪服务是否在运行（用于 activity 恢复后自动重启）
+  bool _serverWasRunning = false;
 
   Future<void> _saveConfig() async {
     if (_enableAuth) {
@@ -351,15 +391,13 @@ class _HomePageState extends State<HomePage> with WindowListener {
         onPressed: () async {
           if (running) { await service.stopServer(); }
           else {
-            await _saveConfig();
             if (_enableAuth && _config.auth == null) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.t('home.authRequired'))),
-                );
-              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(l10n.t('home.authRequired'))),
+              );
               return;
             }
+            await _saveConfig();
             await service.startServer(_config);
           }
         },
@@ -644,20 +682,20 @@ class _HomePageState extends State<HomePage> with WindowListener {
             _config.shareSingleFile = false;
             _isDragOver = false;
           });
+          final fileName = dirPath.split(Platform.pathSeparator).last;
+          final fileDropped = isFile;
           await _saveConfig();
-          if (context.mounted) {
-            final fileName = dirPath.split(Platform.pathSeparator).last;
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${l10n.t('home.dropSet')}: $fileName')),
+          );
+          if (fileDropped) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${l10n.t('home.dropSet')}: $fileName')),
+              SnackBar(
+                content: Text(l10n.t('home.dropFileWarn')),
+                duration: const Duration(seconds: 3),
+              ),
             );
-            if (isFile) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.t('home.dropFileWarn')),
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-            }
           }
         }
       },
@@ -777,6 +815,8 @@ class _HomePageState extends State<HomePage> with WindowListener {
 
   // ==================== Build ====================
 
+  DateTime? _lastBackPress;
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -790,7 +830,7 @@ class _HomePageState extends State<HomePage> with WindowListener {
       ),
     ];
 
-    return Scaffold(
+    final scaffold = Scaffold(
       body: SafeArea(
         child: Column(children: [
           if (Theme.of(context).platform == TargetPlatform.windows ||
@@ -816,6 +856,30 @@ class _HomePageState extends State<HomePage> with WindowListener {
         ],
       ),
     );
+
+    // Android: double-back to exit
+    if (Theme.of(context).platform == TargetPlatform.android) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          final now = DateTime.now();
+          if (_lastBackPress == null || now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+            _lastBackPress = now;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.t('home.exitConfirm')),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          } else {
+            SystemNavigator.pop();
+          }
+        },
+        child: scaffold,
+      );
+    }
+    return scaffold;
   }
 }
 

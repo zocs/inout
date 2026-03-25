@@ -1,6 +1,8 @@
 package cc.merr.inout
 
 import android.Manifest
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -34,7 +36,6 @@ class MainActivity : FlutterActivity() {
                     val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         Environment.isExternalStorageManager()
                     } else {
-                        // Android < 11: check READ_EXTERNAL_STORAGE runtime permission
                         ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
                     }
                     Log.d("inout", "Storage granted: $granted (API ${Build.VERSION.SDK_INT})")
@@ -50,13 +51,38 @@ class MainActivity : FlutterActivity() {
                             startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
                         }
                     } else {
-                        // Android < 11: request runtime permissions
                         ActivityCompat.requestPermissions(this, arrayOf(
                             Manifest.permission.READ_EXTERNAL_STORAGE,
                             Manifest.permission.WRITE_EXTERNAL_STORAGE
                         ), STORAGE_PERMISSION_CODE)
                     }
                     result.success(true)
+                }
+                "startForegroundService" -> {
+                    val port = call.argument<Int>("port") ?: 0
+                    val path = call.argument<String>("path") ?: ""
+                    val intent = Intent(this, DufsForegroundService::class.java)
+                    intent.putExtra("port", port)
+                    intent.putExtra("path", path)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+                    Log.d("inout", "Foreground service started: port=$port")
+                    result.success(true)
+                }
+                "stopForegroundService" -> {
+                    val intent = Intent(this, DufsForegroundService::class.java)
+                    stopService(intent)
+                    Log.d("inout", "Foreground service stopped")
+                    result.success(true)
+                }
+                "isServiceRunning" -> {
+                    val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                    val running = manager.getRunningServices(Integer.MAX_VALUE)
+                        .any { it.service.className == DufsForegroundService::class.java.name }
+                    result.success(running)
                 }
                 else -> result.notImplemented()
             }

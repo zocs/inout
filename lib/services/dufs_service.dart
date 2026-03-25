@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -32,6 +31,7 @@ class DufsService extends ChangeNotifier {
 
   void _log(String msg) {
     debugPrint(msg);
+    // ignore: body_might_complete_normally_catch_error
     if (Platform.isAndroid) _ch.invokeMethod('log', {'msg': msg}).catchError((_) {});
   }
 
@@ -70,6 +70,23 @@ class DufsService extends ChangeNotifier {
     }
   }
 
+  /// 检查端口是否被占用（公共方法，用于恢复状态检测）
+  Future<bool> isPortInUse(int port) async => !(await _isPortAvailable(port));
+
+  /// 强制清理占用端口的孤儿进程
+  Future<void> killOrphanOnPort(int port) async {
+    try {
+      if (Platform.isAndroid) {
+        await Process.run('pkill', ['-f', 'libdufs.so']).catchError((_) => ProcessResult(0, 1, '', ''));
+      } else if (Platform.isLinux || Platform.isMacOS) {
+        await Process.run('fuser', ['-k', '$port/tcp']).catchError((_) => ProcessResult(0, 1, '', ''));
+      }
+      _log('Cleaned up orphan on port $port');
+    } catch (e) {
+      _log('Failed to clean orphan on port $port: $e');
+    }
+  }
+
   /// 清理可能残留的 dufs 孤儿进程（占用了目标端口的）
   Future<void> _killOrphanDufs(int port) async {
     try {
@@ -93,10 +110,11 @@ class DufsService extends ChangeNotifier {
           }
         }
       } else if (Platform.isAndroid) {
-        // On Android, dufs runs as child process of the app, so killing the app kills dufs
+        // On Android, kill any dufs process that might be orphaned
+        await Process.run('pkill', ['-f', 'libdufs.so']).catchError((_) => ProcessResult(0, 1, '', ''));
       } else {
         // Linux/macOS: find and kill dufs on the port
-        await Process.run('fuser', ['-k', '$port/tcp']).catchError((_) {});
+        await Process.run('fuser', ['-k', '$port/tcp']).catchError((_) => ProcessResult(0, 1, '', ''));
       }
     } catch (e) {
       _log('Failed to kill orphan dufs: $e');
@@ -160,6 +178,10 @@ class DufsService extends ChangeNotifier {
       if (_allAddresses.isEmpty) { _allAddresses.add('127.0.0.1'); _allInterfaceNames.add('Local'); }
       _serverUrl = 'http://${_allAddresses.first}:${config.port}';
       _log('server: $_serverUrl, all: $_allAddresses');
+      // Start Android foreground service to keep dufs alive
+      if (Platform.isAndroid) {
+        _ch.invokeMethod('startForegroundService', {'port': config.port, 'path': config.path}).catchError((_) {});
+      }
       notifyListeners();
     } catch (e) {
       _error = 'Start failed: $e'; _isRunning = false; notifyListeners();
@@ -247,8 +269,34 @@ class DufsService extends ChangeNotifier {
   Future<void> stopServer() async {
     if (!_isRunning) return;
     if (_process != null) { _process!.kill(); _process = null; }
+    if (Platform.isAndroid) {
+      _ch.invokeMethod('stopForegroundService').catchError((_) {});
+    }
     _isRunning = false; _serverUrl = null; _totalRequests = 0; _lastActivity = null;
     _allAddresses = []; _allInterfaceNames = [];
+    notifyListeners();
+  }
+
+  /// 恢复到孤儿 dufs 进程的状态（Activity 重建后端口仍被占用）
+  Future<void> restoreFromOrphan(int port) async {
+    _isRunning = true;
+    _localIp = await _getWifiIP();
+    final allNet = await _getAllAddresses();
+    _allAddresses = allNet['addresses'] ?? [];
+    _allInterfaceNames = allNet['names'] ?? [];
+    if (_localIp != null && _allAddresses.contains(_localIp)) {
+      final idx = _allAddresses.indexOf(_localIp!);
+      _allAddresses.removeAt(idx);
+      _allInterfaceNames.removeAt(idx);
+      _allAddresses.insert(0, _localIp!);
+      _allInterfaceNames.insert(0, 'WiFi');
+    } else if (_localIp != null && !_allAddresses.contains(_localIp)) {
+      _allAddresses.insert(0, _localIp!);
+      _allInterfaceNames.insert(0, 'WiFi');
+    }
+    if (_allAddresses.isEmpty) { _allAddresses.add('127.0.0.1'); _allInterfaceNames.add('Local'); }
+    _serverUrl = 'http://${_allAddresses.first}:$port';
+    _log('restored orphan dufs: $_serverUrl');
     notifyListeners();
   }
 
