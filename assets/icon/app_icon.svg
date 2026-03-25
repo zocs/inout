@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" ry="96" fill="#FAF9F6"/>
+  
+  <!-- Page — maximum pencil feel, wobbly lines -->
+  <path d="M112 98 
+           C110 98 108 100 108 103 
+           L332 96 C336 95 338 97 340 99 
+           L390 154 C392 156 393 159 393 162 
+           L394 398 C394 412 378 414 376 414 
+           L128 416 C114 416 112 414 112 412 Z" 
+        fill="none" stroke="#2C2C2C" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M114 100 L334 98 L392 156 L396 399 L130 415" 
+        fill="none" stroke="#2C2C2C" stroke-width="5" stroke-linecap="round" opacity="0.14"/>
+  <path d="M110 96 L330 94 L388 152 L392 396 L126 413" 
+        fill="none" stroke="#2C2C2C" stroke-width="3.5" stroke-linecap="round" opacity="0.09"/>
+  <path d="M109 101 L331 97 L389 153 L395 397 L129 417" 
+        fill="none" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" opacity="0.06"/>
+  <!-- Fold -->
+  <path d="M332 96 L332 148 L390 154" fill="none" stroke="#2C2C2C" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M334 98 L334 150 L392 156" fill="none" stroke="#2C2C2C" stroke-width="5" stroke-linecap="round" opacity="0.14"/>
+  <path d="M332 96 L332 148 L390 154 Z" fill="#E8E6E1"/>
+  
+  <!-- Up arrow — max pencil -->
+  <g transform="translate(208, 268)">
+    <path d="M0 46 C-2 26 2 -4 0 -10" stroke="#1A1A1A" stroke-width="24" stroke-linecap="round"/>
+    <path d="M-26 8 C-24 0 -8 -20 0 -26 C8 -20 24 0 26 8" fill="none" stroke="#1A1A1A" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4 44 C2 24 -2 -2 4 -8" stroke="#1A1A1A" stroke-width="8" stroke-linecap="round" opacity="0.14"/>
+    <path d="M-4 48 C-6 28 2 -6 -4 -12" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" opacity="0.09"/>
+  </g>
+  
+  <!-- Down arrow — max pencil -->
+  <g transform="translate(310, 268)">
+    <path d="M0 -46 C2 -26 -2 4 0 10" stroke="#1A1A1A" stroke-width="24" stroke-linecap="round"/>
+    <path d="M-26 -8 C-24 0 -8 20 0 26 C8 20 24 0 26 -8" fill="none" stroke="#1A1A1A" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M-4 -44 C-2 -24 2 2 -4 8" stroke="#1A1A1A" stroke-width="8" stroke-linecap="round" opacity="0.14"/>
+    <path d="M4 -48 C6 -28 -2 6 4 12" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" opacity="0.09"/>
+  </g>
+</svg>
