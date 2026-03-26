@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # build_dufs.sh - Compile dufs from source for a given platform
 # Usage: bash scripts/build_dufs.sh <platform>
 #   platform: android-arm64 | linux-x86_64 | linux-arm64 | windows-x86_64 | macos-arm64 | macos-x86_64 | ios-arm64
@@ -36,7 +36,7 @@ case "$PLATFORM" in
   android-arm64)
     RUST_TARGET="aarch64-linux-android"
 
-    rustup target add "$RUST_TARGET"
+    command -v rustup >/dev/null 2>&1 && rustup target add "$RUST_TARGET"
 
     if [ -n "$ANDROID_NDK_HOME" ]; then
       NDK="$ANDROID_NDK_HOME"
@@ -76,7 +76,7 @@ EOF
   linux-x86_64)
     RUST_TARGET="x86_64-unknown-linux-gnu"
 
-    rustup target add "$RUST_TARGET"
+    command -v rustup &>/dev/null && rustup target add "$RUST_TARGET"
     cargo build --lib --release --target "$RUST_TARGET"
 
     cp "target/${RUST_TARGET}/release/libdufs.so" "${OUTPUT_DIR}/libdufs-linux-x86_64.so"
@@ -86,7 +86,7 @@ EOF
   linux-arm64)
     RUST_TARGET="aarch64-unknown-linux-gnu"
 
-    rustup target add "$RUST_TARGET"
+    command -v rustup >/dev/null 2>&1 && rustup target add "$RUST_TARGET"
     sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
 
     mkdir -p .cargo
@@ -105,7 +105,7 @@ EOF
   windows-x86_64)
     RUST_TARGET="x86_64-pc-windows-gnu"
 
-    rustup target add "$RUST_TARGET"
+    command -v rustup >/dev/null 2>&1 && rustup target add "$RUST_TARGET"
     sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
 
     mkdir -p .cargo
@@ -124,7 +124,7 @@ EOF
   macos-arm64)
     RUST_TARGET="aarch64-apple-darwin"
 
-    rustup target add "$RUST_TARGET"
+    command -v rustup >/dev/null 2>&1 && rustup target add "$RUST_TARGET"
     cargo build --lib --release --target "$RUST_TARGET"
 
     cp "target/${RUST_TARGET}/release/libdufs.dylib" "${OUTPUT_DIR}/libdufs-macos-arm64.dylib"
@@ -134,7 +134,7 @@ EOF
   macos-x86_64)
     RUST_TARGET="x86_64-apple-darwin"
 
-    rustup target add "$RUST_TARGET"
+    command -v rustup >/dev/null 2>&1 && rustup target add "$RUST_TARGET"
     cargo build --lib --release --target "$RUST_TARGET"
 
     cp "target/${RUST_TARGET}/release/libdufs.dylib" "${OUTPUT_DIR}/libdufs-macos-x86_64.dylib"
@@ -145,7 +145,7 @@ EOF
     RUST_TARGET="aarch64-apple-ios"
     FRAMEWORKS_DIR="${PROJECT_DIR}/ios/Frameworks"
 
-    rustup target add "$RUST_TARGET"
+    command -v rustup >/dev/null 2>&1 && rustup target add "$RUST_TARGET"
     cargo build --lib --release --target "$RUST_TARGET"
 
     mkdir -p "$FRAMEWORKS_DIR"
