@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -144,6 +145,12 @@ class DufsService extends ChangeNotifier {
 
   Future<void> startServer(ServerConfig config) async {
     if (_isRunning) return;
+    // Set up log file path
+    final tmpDir = await getTemporaryDirectory();
+    _logFilePath = '${tmpDir.path}/inout_dufs.log';
+    // Clear previous log file
+    try { await File(_logFilePath!).writeAsString(''); } catch (_) {}
+    _logFilePosition = 0;
     if (config.path.isEmpty) { _error = 'No directory'; notifyListeners(); return; }
     // 单文件模式检查文件是否存在，目录模式检查目录是否存在
     if (config.shareSingleFile) {
@@ -221,6 +228,8 @@ class DufsService extends ChangeNotifier {
       if (_allAddresses.isEmpty) { _allAddresses.add('127.0.0.1'); _allInterfaceNames.add('Local'); }
       _serverUrl = 'http://${_allAddresses.first}:${config.port}';
       _log('server: $_serverUrl, all: $_allAddresses');
+      // Start polling log file for transfer records
+      _startLogFilePolling();
       notifyListeners();
     } catch (e) {
       _error = 'Start failed: $e'; _isRunning = false; notifyListeners();
@@ -265,6 +274,8 @@ class DufsService extends ChangeNotifier {
     }
     if (c.auth != null && c.auth!.isNotEmpty) args.addAll(['--auth', '${c.auth!}@/:rw']);
     if (c.cors) args.add('--enable-cors');
+    // Write HTTP logs to a temp file so we can read them on all platforms
+    if (_logFilePath != null) args.addAll(['--log-file', _logFilePath!]);
     // dufs 只能服务目录，单文件模式传父目录
     if (c.shareSingleFile) {
       args.add(p.dirname(c.path));
@@ -273,6 +284,13 @@ class DufsService extends ChangeNotifier {
     }
     return args;
   }
+
+  /// Path to the dufs log file (set before start, cleared on stop)
+  String? _logFilePath;
+  /// Timer to poll the log file for new entries (Android/workaround)
+  Timer? _logFileTimer;
+  /// Last position read in the log file
+  int _logFilePosition = 0;
 
   // ==================== Start dufs process ====================
   Future<void> _startDufsProcess(ServerConfig config) async {
@@ -299,15 +317,16 @@ class DufsService extends ChangeNotifier {
   }
 
   /// 解析 dufs 输出行，更新请求计数和日志列表
-  /// dufs 日志格式示例: "2026-03-26 12:00:00 | 200 | GET /path | 1234 | 192.168.1.100"
+  /// dufs 日志格式示例: "2026-03-26T12:00:00+08:00 INFO - 192.168.1.100 "GET /path" 200"
   void _trackActivity(String line) {
-    final isRequest = RegExp(r'\|\s*[1-5]\d{2}\s*\|').hasMatch(line);
+    final isRequest = RegExp(r'[1-5]\d{2}').hasMatch(line) &&
+        (line.contains('GET') || line.contains('POST') || line.contains('PUT') || line.contains('DELETE'));
     if (isRequest) {
       _totalRequests++;
       _lastActivity = DateTime.now().toIso8601String().substring(11, 19);
-      // Try to parse full log entry
+      // Try to parse full log entry, filter non-file requests
       final entry = TransferLog.parse(line);
-      if (entry != null) {
+      if (entry != null && _isFileTransfer(entry)) {
         _transferLogs.insert(0, entry); // newest first
         // Keep max 200 entries
         if (_transferLogs.length > 200) {
@@ -318,10 +337,53 @@ class DufsService extends ChangeNotifier {
     }
   }
 
+  /// 判断日志条目是否为文件传输（过滤掉页面请求、目录浏览、缓存响应、静态资源等）
+  bool _isFileTransfer(TransferLog entry) {
+    final path = entry.path;
+    // Filter: root page
+    if (path == '/' || path.isEmpty) return false;
+    // Filter: directory listing (path ends with /) and bare directory names (GET without body)
+    if (path.endsWith('/')) return false;
+    // Filter: 304 Not Modified — keep in log (user did access the file) but mark differently
+    // Don't filter 304 — they represent real user actions
+    // Filter: dufs static assets, favicon
+    if (path.endsWith('.css') || path.endsWith('.js') || path.endsWith('.ico')) return false;
+    if (path.contains('/dufs-assets/')) return false;
+    // Filter: WebDAV operations (MKCOL create dir, OPTIONS, PROPFIND metadata)
+    if (entry.method == 'MKCOL' || entry.method == 'OPTIONS' || entry.method == 'PROPFIND') return false;
+    // Filter: directory access (GET with no file extension = directory listing)
+    if (entry.isDownload && !path.contains('.')) return false;
+    // Keep: file download (GET), upload (POST/PUT), delete (DELETE)
+    return entry.isDownload || entry.isUpload || entry.isDelete;
+  }
+
   /// 清空传输日志
   void clearLogs() {
     _transferLogs.clear();
     notifyListeners();
+  }
+
+  /// Start polling the dufs log file for new entries
+  void _startLogFilePolling() {
+    _logFileTimer?.cancel();
+    _logFileTimer = Timer.periodic(const Duration(seconds: 2), (_) => _readLogFile());
+  }
+
+  /// Read new lines from the dufs log file
+  Future<void> _readLogFile() async {
+    if (_logFilePath == null) return;
+    try {
+      final file = File(_logFilePath!);
+      if (!await file.exists()) return;
+      final content = await file.readAsString();
+      if (content.length <= _logFilePosition) return;
+      final newPart = content.substring(_logFilePosition);
+      _logFilePosition = content.length;
+      for (final line in newPart.split('\n')) {
+        final trimmed = line.trim();
+        if (trimmed.isNotEmpty) _trackActivity(trimmed);
+      }
+    } catch (_) {}
   }
 
   Future<void> stopServer() async {
@@ -337,6 +399,7 @@ class DufsService extends ChangeNotifier {
     }
     _isRunning = false; _serverUrl = null; _totalRequests = 0; _lastActivity = null;
     _allAddresses = []; _allInterfaceNames = []; _transferLogs.clear();
+    _logFileTimer?.cancel(); _logFileTimer = null; _logFilePath = null; _logFilePosition = 0;
     notifyListeners();
   }
 

@@ -114,13 +114,24 @@ class LogPage extends StatelessWidget {
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
       leading: Icon(icon, size: 20, color: iconColor),
-      title: Text(
-        _displayName(entry.path),
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: Row(children: [
+        Expanded(child: Text(
+          _displayName(entry.path),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        )),
+        if (entry.ip != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(entry.ip!, style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500)),
+          ),
+      ]),
       subtitle: Row(children: [
         Text(entry.method, style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: iconColor, fontWeight: FontWeight.w600)),
@@ -137,11 +148,6 @@ class LogPage extends StatelessWidget {
         if (entry.size != null) ...[
           const SizedBox(width: 8),
           Text(_formatSize(entry.size!), style: Theme.of(context).textTheme.labelSmall),
-        ],
-        if (entry.ip != null) ...[
-          const SizedBox(width: 8),
-          Text(entry.ip!, style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.outline)),
         ],
       ]),
       trailing: Text(timeStr, style: Theme.of(context).textTheme.labelSmall?.copyWith(

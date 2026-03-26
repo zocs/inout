@@ -90,7 +90,8 @@ class DufsForegroundService : Service() {
 
             val pb = ProcessBuilder(fullArgs)
             pb.directory(java.io.File(path))
-            pb.redirectErrorStream(true)
+            // Don't redirect error stream - let dufs manage its own I/O freely
+            // Reading process I/O on Android can interfere with network sockets
             dufsProcess = pb.start()
 
             // Startup verification: wait 300ms then check if process is still alive

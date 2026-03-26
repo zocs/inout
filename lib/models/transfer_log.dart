@@ -29,48 +29,29 @@ class TransferLog {
   bool get isSuccess => status >= 200 && status < 300;
 
   /// 解析 dufs 日志行
-  /// dufs 日志格式: "2026-03-26 12:00:00 | 200 | GET /path | 1234 | 192.168.1.100"
-  /// 也可能是更简短的格式
+  /// dufs 日志格式 (logger.rs + http_logger.rs):
+  /// "2026-03-26T12:00:00+08:00 INFO - 192.168.1.100 \"GET /path\" 200"
   static TransferLog? parse(String line) {
     try {
-      final parts = line.split('|').map((s) => s.trim()).toList();
-      if (parts.length < 3) return null;
+      // Format: TIMESTAMP LEVEL - IP "METHOD PATH" STATUS
+      final regex = RegExp(r'^(\S+)\s+(\S+)\s+-\s+(\S+)\s+"(\S+)\s+(\S+)"\s+(\d{3})');
+      final match = regex.firstMatch(line);
+      if (match == null) return null;
 
-      // Parse timestamp
-      final timeStr = parts[0];
-      final time = DateTime.tryParse(timeStr);
+      final time = DateTime.tryParse(match.group(1)!);
       if (time == null) return null;
 
-      // Parse status code
-      final statusStr = parts[1];
-      final status = int.tryParse(statusStr);
-      if (status == null || status < 100 || status > 599) return null;
-
-      // Parse method + path (e.g., "GET /file.txt" or "POST /upload")
-      final methodPath = parts[2];
-      final spaceIdx = methodPath.indexOf(' ');
-      if (spaceIdx == -1) return null;
-      final method = methodPath.substring(0, spaceIdx).toUpperCase();
-      final path = methodPath.substring(spaceIdx + 1);
-
-      // Optional: size
-      int? size;
-      if (parts.length > 3) {
-        size = int.tryParse(parts[3]);
-      }
-
-      // Optional: IP
-      String? ip;
-      if (parts.length > 4) {
-        ip = parts[4];
-      }
+      final ip = match.group(3)!;
+      final method = match.group(4)!.toUpperCase();
+      final path = match.group(5)!;
+      final status = int.tryParse(match.group(6)!);
+      if (status == null) return null;
 
       return TransferLog(
         time: time,
         method: method,
         path: path,
         status: status,
-        size: size,
         ip: ip,
       );
     } catch (_) {
