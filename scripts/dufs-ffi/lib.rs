@@ -1,6 +1,12 @@
 // lib.rs — FFI wrapper for dufs
 // Exposes dufs_start / dufs_stop for embedding in Flutter (dart:ffi)
 
+#[macro_use]
+extern crate log;
+
+// Re-export log macros for sub-modules (needed in Rust 2021 edition)
+pub(crate) use log::{debug, error, info, trace, warn};
+
 mod args;
 mod auth;
 mod http_logger;
@@ -16,7 +22,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 
 use crate::args::{build_cli, Args, BindAddr};
-use crate::logger;
 use crate::server::Server;
 use anyhow::{anyhow, Result};
 use std::net::{IpAddr, SocketAddr, TcpListener as StdTcpListener};
