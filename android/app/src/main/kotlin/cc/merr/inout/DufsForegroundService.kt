@@ -104,7 +104,7 @@ class DufsForegroundService : Service() {
 
             if (!alive) {
                 lastError = "dufs process exited immediately after start"
-                Log.e(TAG, lastError)
+                Log.e(TAG, lastError ?: "")
                 dufsProcess = null
                 false
             } else {
@@ -113,7 +113,7 @@ class DufsForegroundService : Service() {
             }
         } catch (e: Exception) {
             lastError = "Failed to start dufs: ${e.message}"
-            Log.e(TAG, lastError, e)
+            Log.e(TAG, lastError ?: "", e)
             dufsProcess = null
             false
         }

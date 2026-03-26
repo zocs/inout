@@ -492,7 +492,7 @@ class _HomePageState extends State<HomePage> with WindowListener, WidgetsBinding
 
   // ==================== Multi-NIC Address List ====================
   Widget _buildAddressList(DufsService service) {
-    if (!service.isRunning || service.allAddresses.length <= 1) return const SizedBox.shrink();
+    if (!service.isRunning) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
@@ -864,23 +864,44 @@ class _HomePageState extends State<HomePage> with WindowListener, WidgetsBinding
       ),
     );
 
-    // Android: double-back to exit
+    // Android: back button behavior
     if (Theme.of(context).platform == TargetPlatform.android) {
       return PopScope(
         canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
+        onPopInvokedWithResult: (didPop, _) async {
           if (didPop) return;
-          final now = DateTime.now();
-          if (_lastBackPress == null || now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
-            _lastBackPress = now;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.t('home.exitConfirm')),
-                duration: const Duration(seconds: 2),
+          final service = context.read<DufsService>();
+          if (service.isRunning) {
+            // Server running: ask if user wants to stop and exit
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(l10n.t('home.exitWhileRunning')),
+                content: Text(l10n.t('home.exitWhileRunningMsg')),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel)),
+                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.t('home.exitAndStop'))),
+                ],
               ),
             );
+            if (confirmed == true) {
+              await service.stopServer();
+              if (mounted) SystemNavigator.pop();
+            }
           } else {
-            SystemNavigator.pop();
+            // Server not running: double-press to exit
+            final now = DateTime.now();
+            if (_lastBackPress == null || now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+              _lastBackPress = now;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(l10n.t('home.exitConfirm')),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            } else {
+              SystemNavigator.pop();
+            }
           }
         },
         child: scaffold,
