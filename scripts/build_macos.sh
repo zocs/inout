@@ -2,6 +2,7 @@
 # build_macos.sh - Build inout for macOS
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ARCH=${1:-aarch64}
 VERSION=$(grep 'version:' pubspec.yaml | head -1 | awk '{print $2}' | tr -d '+')
 APP_NAME="inout"
@@ -13,17 +14,14 @@ ARCHIVE_NAME="${APP_NAME}-${VERSION}-macos-${DISPLAY_ARCH}"
 
 echo "Building inout ${VERSION} for macOS ${DISPLAY_ARCH}..."
 
-# Download dufs binary (skip if already present in assets/dufs/)
+# Build dufs from source (or skip if already present in assets/dufs/)
 DUFS_LOCAL="assets/dufs/dufs-macos-${DISPLAY_ARCH}"
 if [ -f "$DUFS_LOCAL" ]; then
   echo "Using existing dufs binary: $DUFS_LOCAL"
 else
-  DUFS_URL="https://github.com/sigoden/dufs/releases/download/v0.45.0/dufs-v0.45.0-${DARWIN_ARCH}.tar.gz"
-  echo "Downloading dufs for ${DARWIN_ARCH}..."
-  curl -sL "$DUFS_URL" | tar xz -C /tmp/
-  mkdir -p assets/dufs
-  cp /tmp/dufs "$DUFS_LOCAL"
-  chmod +x "$DUFS_LOCAL"
+  DUFS_PLATFORM=$([ "$ARCH" = "aarch64" ] && echo "macos-arm64" || echo "macos-x86_64")
+  echo "Compiling dufs from source for ${DUFS_PLATFORM}..."
+  bash "${SCRIPT_DIR}/build_dufs.sh" "$DUFS_PLATFORM"
 fi
 
 # Build Flutter macOS

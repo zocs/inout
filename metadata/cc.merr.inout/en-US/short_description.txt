@@ -1,0 +1,1 @@
+A simple graphical file sharing tool based on dufs.

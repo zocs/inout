@@ -2,6 +2,7 @@
 # build_linux.sh - Build and package inout for Linux
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ARCH=${1:-x86_64}
 VERSION=$(grep 'version:' pubspec.yaml | head -1 | awk '{print $2}' | tr -d '+')
 APP_NAME="inout"
@@ -12,18 +13,14 @@ ARCHIVE_NAME="${APP_NAME}-${VERSION}-linux-${ARCH}"
 
 echo "Building inout ${VERSION} for Linux ${ARCH}..."
 
-# Download dufs binary (skip if already present in assets/dufs/)
+# Build dufs from source (or skip if already present in assets/dufs/)
 DUFS_LOCAL="assets/dufs/dufs-linux-${ARCH}"
 if [ -f "$DUFS_LOCAL" ]; then
   echo "Using existing dufs binary: $DUFS_LOCAL"
 else
-  DUFS_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64-unknown-linux-musl" || echo "x86_64-unknown-linux-musl")
-  DUFS_URL="https://github.com/sigoden/dufs/releases/download/v0.45.0/dufs-v0.45.0-${DUFS_ARCH}.tar.gz"
-  echo "Downloading dufs for ${DUFS_ARCH}..."
-  curl -sL "$DUFS_URL" | tar xz -C /tmp/
-  mkdir -p assets/dufs
-  cp /tmp/dufs "$DUFS_LOCAL"
-  chmod +x "$DUFS_LOCAL"
+  DUFS_PLATFORM=$([ "$ARCH" = "aarch64" ] && echo "linux-arm64" || echo "linux-x86_64")
+  echo "Compiling dufs from source for ${DUFS_PLATFORM}..."
+  bash "${SCRIPT_DIR}/build_dufs.sh" "$DUFS_PLATFORM"
 fi
 
 # Build Flutter Linux

@@ -51,3 +51,8 @@ dist/
 *.apk
 *.aab
 *.zip
+
+# Pre-compiled dufs binaries (built from source in CI)
+assets/dufs/dufs-*
+android/app/src/main/jniLibs/*/libdufs.so
+ios/Frameworks/dufs

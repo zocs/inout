@@ -1,0 +1,66 @@
+Categories:
+  - Internet
+  - Files
+License: MIT
+AuthorName: zocs
+WebSite: https://github.com/zocs/inout
+SourceCode: https://github.com/zocs/inout
+IssueTracker: https://github.com/zocs/inout/issues
+Changelog: https://github.com/zocs/inout/releases
+
+Name: inout
+AutoName: inout
+Summary: Simple graphical file sharing tool
+Description: |-
+  inout is a graphical file sharing application that lets you share files
+  from your device to any browser on your local network.
+
+  Features:
+  * One-tap file sharing via HTTP
+  * Upload files from any browser
+  * QR code for easy access
+  * File transfer log
+  * Customizable permissions
+  * Multi-language support
+  * Material 3 design
+
+RepoType: git
+Repo: https://github.com/zocs/inout
+
+Builds:
+  - versionName: 0.2.4
+    versionCode: 24
+    commit: v0.2.4
+    subdir: android
+    sudo:
+      - apt-get update
+      - apt-get install -y protobuf-compiler
+    init:
+      - cd ..
+      - git clone --depth 1 --branch stable https://github.com/flutter/flutter.git
+      - export PATH="$PWD/flutter/bin:$PWD/flutter/bin/cache/dart-sdk/bin:$PATH"
+      - flutter precache --android
+      - flutter config --no-analytics
+    prebuild:
+      - export PATH="$PWD/flutter/bin:$PWD/flutter/bin/cache/dart-sdk/bin:$PATH"
+      # Install Rust
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - source $HOME/.cargo/env
+      - rustup target add aarch64-linux-android
+      # Compile dufs from source
+      - cd ..
+      - NDK=$(find "$ANDROID_HOME/ndk" -maxdepth 1 -type d | sort -V | tail -1)
+      - export ANDROID_NDK_HOME="$NDK"
+      - bash scripts/build_dufs.sh android-arm64
+      - cd android
+    build:
+      - export PATH="$PWD/flutter/bin:$PWD/flutter/bin/cache/dart-sdk/bin:$PATH"
+      - cd ..
+      - flutter build apk --release
+
+AllowedAPKSigningKeys: []
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.2.4
+CurrentVersionCode: 24

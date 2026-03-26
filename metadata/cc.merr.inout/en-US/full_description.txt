@@ -1,0 +1,13 @@
+inout is a graphical file sharing application that lets you share files from your device to any browser on your local network.
+
+Features:
+- One-tap file sharing via HTTP
+- Upload files from any browser
+- QR code for easy access
+- File transfer log
+- Customizable permissions (readonly / upload / full)
+- Multi-language support (Simplified Chinese, Traditional Chinese, English)
+- Material 3 design with 6 color themes
+- Runs as a foreground service on Android for reliable background operation
+
+Based on the powerful dufs file server with a user-friendly graphical interface.
