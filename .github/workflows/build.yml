@@ -22,12 +22,17 @@ jobs:
         with:
           flutter-version: '3.41.5'
       - run: flutter build apk --release
+      - run: flutter build appbundle --release
       - name: Rename APK
         run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ github.ref_name }}-android-arm64.apk
+      - name: Rename AAB
+        run: cp build/app/outputs/bundle/release/app-release.aab inout-${{ github.ref_name }}-android-arm64.aab
       - uses: actions/upload-artifact@v4
         with:
           name: android
-          path: inout-${{ github.ref_name }}-android-arm64.apk
+          path: |
+            inout-${{ github.ref_name }}-android-arm64.apk
+            inout-${{ github.ref_name }}-android-arm64.aab
 
   build-windows:
     name: Windows x64
@@ -169,7 +174,7 @@ jobs:
 
             | Platform | Files | Status |
             |----------|-------|--------|
-            | Android | `.apk` | ✅ |
+            | Android | `.apk` + `.aab` (Play Store) | ✅ |
             | iOS | `.zip` (app bundle) | ⚠️ 未签名，未实机测试 |
             | Windows x64 | `.exe` (installer) + `.zip` (portable) | ✅ |
             | macOS ARM64 | `.zip` (app bundle) | ⚠️ 未签名，未实机测试 |
@@ -184,6 +189,7 @@ jobs:
             artifacts/**/*.rpm
             artifacts/**/*.tar.gz
             artifacts/**/*.apk
+            artifacts/**/*.aab
             artifacts/**/*.zip
             artifacts/**/*.exe
             artifacts/**/*.dmg
