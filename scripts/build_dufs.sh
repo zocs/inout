@@ -30,6 +30,17 @@ if [ ! -d "$DUFS_SRC" ]; then
   git clone --depth 1 --branch "$DUFS_VERSION" "$DUFS_REPO" "$DUFS_SRC"
 fi
 
+# Apply inout's FFI modifications (lib.rs + Cargo.toml [lib] section)
+DUFS_FFI_DIR="${SCRIPT_DIR}/dufs-ffi"
+if [ -d "$DUFS_FFI_DIR" ]; then
+  echo "Applying FFI modifications..."
+  cp "${DUFS_FFI_DIR}/lib.rs" "${DUFS_SRC}/src/lib.rs"
+  # Ensure Cargo.toml has [lib] section
+  if ! grep -q '^\[lib\]' "${DUFS_SRC}/Cargo.toml"; then
+    sed -i '1i\[lib]\nname = "dufs"\ncrate-type = ["cdylib", "rlib"]\n' "${DUFS_SRC}/Cargo.toml"
+  fi
+fi
+
 cd "$DUFS_SRC"
 
 case "$PLATFORM" in
