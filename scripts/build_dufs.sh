@@ -2,10 +2,13 @@
 # build_dufs.sh - Compile dufs from source for a given platform
 # Usage: bash scripts/build_dufs.sh <platform>
 #   platform: android-arm64 | linux-x86_64 | linux-arm64 | windows-x86_64 | macos-arm64 | macos-x86_64 | ios-arm64
+#
+# Builds dufs as a cdylib (shared library) for FFI embedding in Flutter.
+# The output is a .so / .dll / .dylib that exposes dufs_start / dufs_stop / dufs_is_running.
 set -e
 
 DUFS_VERSION="v0.45.0"
-DUFS_REPO="https://github.com/sigoden/dufs.git"
+DUFS_REPO="https://github.com/zocs/dufs.git"
 PLATFORM=${1:?Usage: $0 <platform>}
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -32,22 +35,18 @@ cd "$DUFS_SRC"
 case "$PLATFORM" in
   android-arm64)
     RUST_TARGET="aarch64-linux-android"
-    OUTPUT_NAME="dufs-android-arm64"
-    LIB_OUTPUT="${PROJECT_DIR}/android/app/src/main/jniLibs/arm64-v8a/libdufs.so"
 
     rustup target add "$RUST_TARGET"
 
-    # Find NDK toolchain
     if [ -n "$ANDROID_NDK_HOME" ]; then
       NDK="$ANDROID_NDK_HOME"
     elif [ -n "$ANDROID_HOME" ]; then
       NDK=$(find "$ANDROID_HOME/ndk" -maxdepth 1 -type d | sort -V | tail -1)
     else
-      echo "ERROR: ANDROID_NDK_HOME or ANDROID_HOME must be set"
+      echo "ERROR: ANDROID_NDK_HOME or ANDROID_NDK_HOME must be set"
       exit 1
     fi
 
-    # Set up NDK linker
     TOOLCHAIN="${NDK}/toolchains/llvm/prebuilt"
     case "$(uname -s)" in
       Linux*)  HOST_TAG="linux-x86_64" ;;
@@ -66,27 +65,26 @@ EOF
     export AR="${TOOLCHAIN}/${HOST_TAG}/bin/llvm-ar"
     export RANLIB="${TOOLCHAIN}/${HOST_TAG}/bin/llvm-ranlib"
 
-    cargo build --release --target "$RUST_TARGET"
+    cargo build --lib --release --target "$RUST_TARGET"
 
+    LIB_OUTPUT="${PROJECT_DIR}/android/app/src/main/jniLibs/arm64-v8a/libdufs.so"
     mkdir -p "$(dirname "$LIB_OUTPUT")"
-    cp "target/${RUST_TARGET}/release/dufs" "$LIB_OUTPUT"
+    cp "target/${RUST_TARGET}/release/libdufs.so" "$LIB_OUTPUT"
     echo "Built: $LIB_OUTPUT ($(du -h "$LIB_OUTPUT" | cut -f1))"
     ;;
 
   linux-x86_64)
     RUST_TARGET="x86_64-unknown-linux-gnu"
-    OUTPUT_NAME="dufs-linux-x86_64"
 
     rustup target add "$RUST_TARGET"
-    cargo build --release --target "$RUST_TARGET"
+    cargo build --lib --release --target "$RUST_TARGET"
 
-    cp "target/${RUST_TARGET}/release/dufs" "${OUTPUT_DIR}/${OUTPUT_NAME}"
-    echo "Built: ${OUTPUT_DIR}/${OUTPUT_NAME} ($(du -h "${OUTPUT_DIR}/${OUTPUT_NAME}" | cut -f1))"
+    cp "target/${RUST_TARGET}/release/libdufs.so" "${OUTPUT_DIR}/libdufs-linux-x86_64.so"
+    echo "Built: ${OUTPUT_DIR}/libdufs-linux-x86_64.so ($(du -h "${OUTPUT_DIR}/libdufs-linux-x86_64.so" | cut -f1))"
     ;;
 
   linux-arm64)
     RUST_TARGET="aarch64-unknown-linux-gnu"
-    OUTPUT_NAME="dufs-linux-aarch64"
 
     rustup target add "$RUST_TARGET"
     sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
@@ -98,15 +96,14 @@ linker = "aarch64-linux-gnu-gcc"
 EOF
 
     export CC="aarch64-linux-gnu-gcc"
-    cargo build --release --target "$RUST_TARGET"
+    cargo build --lib --release --target "$RUST_TARGET"
 
-    cp "target/${RUST_TARGET}/release/dufs" "${OUTPUT_DIR}/${OUTPUT_NAME}"
-    echo "Built: ${OUTPUT_DIR}/${OUTPUT_NAME} ($(du -h "${OUTPUT_DIR}/${OUTPUT_NAME}" | cut -f1))"
+    cp "target/${RUST_TARGET}/release/libdufs.so" "${OUTPUT_DIR}/libdufs-linux-aarch64.so"
+    echo "Built: ${OUTPUT_DIR}/libdufs-linux-aarch64.so ($(du -h "${OUTPUT_DIR}/libdufs-linux-aarch64.so" | cut -f1))"
     ;;
 
   windows-x86_64)
     RUST_TARGET="x86_64-pc-windows-gnu"
-    OUTPUT_NAME="dufs-windows.exe"
 
     rustup target add "$RUST_TARGET"
     sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
@@ -118,32 +115,30 @@ linker = "x86_64-w64-mingw32-gcc"
 EOF
 
     export CC="x86_64-w64-mingw32-gcc"
-    cargo build --release --target "$RUST_TARGET"
+    cargo build --lib --release --target "$RUST_TARGET"
 
-    cp "target/${RUST_TARGET}/release/dufs.exe" "${OUTPUT_DIR}/${OUTPUT_NAME}"
-    echo "Built: ${OUTPUT_DIR}/${OUTPUT_NAME} ($(du -h "${OUTPUT_DIR}/${OUTPUT_NAME}" | cut -f1))"
+    cp "target/${RUST_TARGET}/release/dufs.dll" "${OUTPUT_DIR}/dufs-windows-x86_64.dll"
+    echo "Built: ${OUTPUT_DIR}/dufs-windows-x86_64.dll ($(du -h "${OUTPUT_DIR}/dufs-windows-x86_64.dll" | cut -f1))"
     ;;
 
   macos-arm64)
     RUST_TARGET="aarch64-apple-darwin"
-    OUTPUT_NAME="dufs-macos-arm64"
 
     rustup target add "$RUST_TARGET"
-    cargo build --release --target "$RUST_TARGET"
+    cargo build --lib --release --target "$RUST_TARGET"
 
-    cp "target/${RUST_TARGET}/release/dufs" "${OUTPUT_DIR}/${OUTPUT_NAME}"
-    echo "Built: ${OUTPUT_DIR}/${OUTPUT_NAME} ($(du -h "${OUTPUT_DIR}/${OUTPUT_NAME}" | cut -f1))"
+    cp "target/${RUST_TARGET}/release/libdufs.dylib" "${OUTPUT_DIR}/libdufs-macos-arm64.dylib"
+    echo "Built: ${OUTPUT_DIR}/libdufs-macos-arm64.dylib ($(du -h "${OUTPUT_DIR}/libdufs-macos-arm64.dylib" | cut -f1))"
     ;;
 
   macos-x86_64)
     RUST_TARGET="x86_64-apple-darwin"
-    OUTPUT_NAME="dufs-macos-x86_64"
 
     rustup target add "$RUST_TARGET"
-    cargo build --release --target "$RUST_TARGET"
+    cargo build --lib --release --target "$RUST_TARGET"
 
-    cp "target/${RUST_TARGET}/release/dufs" "${OUTPUT_DIR}/${OUTPUT_NAME}"
-    echo "Built: ${OUTPUT_DIR}/${OUTPUT_NAME} ($(du -h "${OUTPUT_DIR}/${OUTPUT_NAME}" | cut -f1))"
+    cp "target/${RUST_TARGET}/release/libdufs.dylib" "${OUTPUT_DIR}/libdufs-macos-x86_64.dylib"
+    echo "Built: ${OUTPUT_DIR}/libdufs-macos-x86_64.dylib ($(du -h "${OUTPUT_DIR}/libdufs-macos-x86_64.dylib" | cut -f1))"
     ;;
 
   ios-arm64)
@@ -151,11 +146,11 @@ EOF
     FRAMEWORKS_DIR="${PROJECT_DIR}/ios/Frameworks"
 
     rustup target add "$RUST_TARGET"
-    cargo build --release --target "$RUST_TARGET"
+    cargo build --lib --release --target "$RUST_TARGET"
 
     mkdir -p "$FRAMEWORKS_DIR"
-    cp "target/${RUST_TARGET}/release/dufs" "${FRAMEWORKS_DIR}/dufs"
-    echo "Built: ${FRAMEWORKS_DIR}/dufs ($(du -h "${FRAMEWORKS_DIR}/dufs" | cut -f1))"
+    cp "target/${RUST_TARGET}/release/libdufs.a" "${FRAMEWORKS_DIR}/libdufs.a"
+    echo "Built: ${FRAMEWORKS_DIR}/libdufs.a ($(du -h "${FRAMEWORKS_DIR}/libdufs.a" | cut -f1))"
     ;;
 
   *)

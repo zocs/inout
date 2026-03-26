@@ -13,13 +13,13 @@ ARCHIVE_NAME="${APP_NAME}-${VERSION}-linux-${ARCH}"
 
 echo "Building inout ${VERSION} for Linux ${ARCH}..."
 
-# Build dufs from source (or skip if already present in assets/dufs/)
-DUFS_LOCAL="assets/dufs/dufs-linux-${ARCH}"
-if [ -f "$DUFS_LOCAL" ]; then
-  echo "Using existing dufs binary: $DUFS_LOCAL"
+# Build dufs shared library (or skip if already present in assets/dufs/)
+DUFS_LIB="assets/dufs/libdufs-linux-${ARCH}.so"
+if [ -f "$DUFS_LIB" ]; then
+  echo "Existing dufs library found: $DUFS_LIB (delete to rebuild from source)"
 else
   DUFS_PLATFORM=$([ "$ARCH" = "aarch64" ] && echo "linux-arm64" || echo "linux-x86_64")
-  echo "Compiling dufs from source for ${DUFS_PLATFORM}..."
+  echo "Compiling dufs shared library for ${DUFS_PLATFORM}..."
   bash "${SCRIPT_DIR}/build_dufs.sh" "$DUFS_PLATFORM"
 fi
 
@@ -36,9 +36,8 @@ mkdir -p "$OUTPUT_DIR"
 PKG_DIR="${OUTPUT_DIR}/${APP_NAME}"
 cp -r "$BUILD_DIR" "$PKG_DIR"
 
-# Include dufs binary in the bundle
-cp "assets/dufs/dufs-linux-${ARCH}" "${PKG_DIR}/dufs"
-chmod +x "${PKG_DIR}/dufs"
+# Include dufs shared library in the bundle
+cp "assets/dufs/libdufs-linux-${ARCH}.so" "${PKG_DIR}/libdufs.so"
 
 # ==================== AppImage ====================
 echo "Creating AppImage..."

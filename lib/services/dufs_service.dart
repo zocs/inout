@@ -7,10 +7,17 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../models/server_config.dart';
 import '../models/transfer_log.dart';
+import 'dufs_ffi.dart';
+
+/// Whether to use FFI (in-process) instead of spawning dufs as child process.
+/// Desktop platforms (Linux/macOS/Windows) use FFI to avoid AppImage sandbox,
+/// antivirus interception, and orphan process issues.
+bool get _useFfi => Platform.isLinux || Platform.isMacOS || Platform.isWindows;
 
 class DufsService extends ChangeNotifier {
   static const _ch = MethodChannel('cc.merr.inout/native');
 
+  final DufsFfi _dufsFfi = DufsFfi();
   Process? _process;
   bool _isRunning = false;
   String? _serverUrl;
@@ -103,9 +110,10 @@ class DufsService extends ChangeNotifier {
 
   /// 清理可能残留的 dufs 孤儿进程（占用了目标端口的）
   Future<void> _killOrphanDufs(int port) async {
+    // FFI 模式下 dufs 运行在进程内，无需清理孤儿进程
+    if (_useFfi) return;
     try {
       if (Platform.isWindows) {
-        // Find process using the port and kill it if it's dufs
         final result = await Process.run('netstat', ['-ano', '-p', 'TCP']);
         final lines = (result.stdout as String).split('\n');
         for (final line in lines) {
@@ -113,7 +121,6 @@ class DufsService extends ChangeNotifier {
             final parts = line.trim().split(RegExp(r'\s+'));
             final pid = int.tryParse(parts.last);
             if (pid != null) {
-              // Check if it's a dufs process
               final taskResult = await Process.run('tasklist', ['/FI', 'PID eq $pid', '/FO', 'CSV']);
               final output = taskResult.stdout as String;
               if (output.toLowerCase().contains('dufs')) {
@@ -124,7 +131,6 @@ class DufsService extends ChangeNotifier {
           }
         }
       } else if (Platform.isAndroid) {
-        // On Android, kill any dufs process that might be orphaned
         await Process.run('pkill', ['-f', 'libdufs.so']).catchError((_) => ProcessResult(0, 1, '', ''));
       } else if (Platform.isMacOS || Platform.isLinux) {
         final r = await Process.run('lsof', ['-ti', ':$port']).catchError((_) => ProcessResult(0, 1, '', ''));
@@ -204,9 +210,12 @@ class DufsService extends ChangeNotifier {
           notifyListeners();
           return;
         }
-      } else {
-        // Desktop/iOS: start dufs as child process
+      } else if (Platform.isIOS) {
+        // iOS: start dufs as child process (not signed for FFI)
         await _startDufsProcess(config);
+      } else {
+        // Desktop (Linux/macOS/Windows): use FFI
+        await _startDufsFfi(config);
       }
 
       _isRunning = true;
@@ -234,31 +243,6 @@ class DufsService extends ChangeNotifier {
     } catch (e) {
       _error = 'Start failed: $e'; _isRunning = false; notifyListeners();
       _log('failed: $e');
-    }
-  }
-
-  // ==================== Platform-specific binary path ====================
-  Future<String> _resolveBinPath() async {
-    if (Platform.isWindows) {
-      final appDir = await getApplicationDocumentsDirectory();
-      final bin = p.join(appDir.path, 'dufs.exe');
-      if (!await File(bin).exists()) {
-        final data = await rootBundle.load('assets/dufs/dufs-windows.exe');
-        await File(bin).writeAsBytes(data.buffer.asUint8List(), flush: true);
-      }
-      return bin;
-    } else if (Platform.isAndroid) {
-      final nativeDir = await _ch.invokeMethod<String>('getNativeLibraryDir');
-      _log('nativeLibraryDir: $nativeDir');
-      return '$nativeDir/libdufs.so';
-    } else if (Platform.isIOS) {
-      // iOS: dufs binary bundled in Frameworks directory
-      final frameworksDir = p.dirname(Platform.resolvedExecutable);
-      return p.join(frameworksDir, 'dufs');
-    } else {
-      // Linux & macOS: dufs binary next to the app executable
-      final exeDir = File(Platform.resolvedExecutable).parent.path;
-      return p.join(exeDir, 'dufs');
     }
   }
 
@@ -292,14 +276,32 @@ class DufsService extends ChangeNotifier {
   /// Last position read in the log file
   int _logFilePosition = 0;
 
-  // ==================== Start dufs process ====================
+  // ==================== Start dufs via FFI (desktop) ====================
+  Future<void> _startDufsFfi(ServerConfig config) async {
+    if (!_dufsFfi.isLoaded) {
+      final libPath = await resolveDufsLibPath();
+      _log('Loading dufs FFI library: $libPath');
+      _dufsFfi.load(libPath);
+    }
+    final args = _buildArgs(config);
+    final argsStr = args.join(' ');
+    _log('dufs ffi start: $argsStr');
+    final ret = _dufsFfi.start(argsStr);
+    if (ret != 0) {
+      throw Exception('dufs FFI start returned $ret');
+    }
+    // Give the server a moment to bind
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  // ==================== Start dufs process (iOS) ====================
   Future<void> _startDufsProcess(ServerConfig config) async {
-    final binPath = await _resolveBinPath();
+    final exeDir = File(Platform.resolvedExecutable).parent.path;
+    final binPath = p.join(exeDir, 'dufs');
     if (!await File(binPath).exists()) {
       throw Exception('dufs 服务组件缺失，请重新安装应用。路径: $binPath');
     }
     final args = _buildArgs(config);
-    // dufs 只能服务目录，单文件模式用父目录作 root
     final workDir = config.shareSingleFile ? p.dirname(config.path) : config.path;
     _log('dufs: $binPath ${args.join(' ')}');
     _process = await Process.start(binPath, args, workingDirectory: workDir);
@@ -317,18 +319,15 @@ class DufsService extends ChangeNotifier {
   }
 
   /// 解析 dufs 输出行，更新请求计数和日志列表
-  /// dufs 日志格式示例: "2026-03-26T12:00:00+08:00 INFO - 192.168.1.100 "GET /path" 200"
   void _trackActivity(String line) {
     final isRequest = RegExp(r'[1-5]\d{2}').hasMatch(line) &&
         (line.contains('GET') || line.contains('POST') || line.contains('PUT') || line.contains('DELETE'));
     if (isRequest) {
       _totalRequests++;
       _lastActivity = DateTime.now().toIso8601String().substring(11, 19);
-      // Try to parse full log entry, filter non-file requests
       final entry = TransferLog.parse(line);
       if (entry != null && _isFileTransfer(entry)) {
-        _transferLogs.insert(0, entry); // newest first
-        // Keep max 200 entries
+        _transferLogs.insert(0, entry);
         if (_transferLogs.length > 200) {
           _transferLogs.removeRange(200, _transferLogs.length);
         }
@@ -337,39 +336,27 @@ class DufsService extends ChangeNotifier {
     }
   }
 
-  /// 判断日志条目是否为文件传输（过滤掉页面请求、目录浏览、缓存响应、静态资源等）
   bool _isFileTransfer(TransferLog entry) {
     final path = entry.path;
-    // Filter: root page
     if (path == '/' || path.isEmpty) return false;
-    // Filter: directory listing (path ends with /) and bare directory names (GET without body)
     if (path.endsWith('/')) return false;
-    // Filter: 304 Not Modified — keep in log (user did access the file) but mark differently
-    // Don't filter 304 — they represent real user actions
-    // Filter: dufs static assets, favicon
     if (path.endsWith('.css') || path.endsWith('.js') || path.endsWith('.ico')) return false;
     if (path.contains('/dufs-assets/')) return false;
-    // Filter: WebDAV operations (MKCOL create dir, OPTIONS, PROPFIND metadata)
     if (entry.method == 'MKCOL' || entry.method == 'OPTIONS' || entry.method == 'PROPFIND') return false;
-    // Filter: directory access (GET with no file extension = directory listing)
     if (entry.isDownload && !path.contains('.')) return false;
-    // Keep: file download (GET), upload (POST/PUT), delete (DELETE)
     return entry.isDownload || entry.isUpload || entry.isDelete;
   }
 
-  /// 清空传输日志
   void clearLogs() {
     _transferLogs.clear();
     notifyListeners();
   }
 
-  /// Start polling the dufs log file for new entries
   void _startLogFilePolling() {
     _logFileTimer?.cancel();
     _logFileTimer = Timer.periodic(const Duration(seconds: 2), (_) => _readLogFile());
   }
 
-  /// Read new lines from the dufs log file
   Future<void> _readLogFile() async {
     if (_logFilePath == null) return;
     try {
@@ -388,9 +375,12 @@ class DufsService extends ChangeNotifier {
 
   Future<void> stopServer() async {
     if (!_isRunning) return;
-    if (_process != null) {
+    if (_useFfi && _dufsFfi.isLoaded) {
+      // FFI mode: stop the in-process server
+      _dufsFfi.stop();
+    } else if (_process != null) {
+      // Process mode (iOS): kill child process
       _process!.kill();
-      // Wait briefly for port release
       try { await _process!.exitCode.timeout(const Duration(seconds: 2)); } catch (_) {}
       _process = null;
     }
@@ -437,7 +427,9 @@ class DufsService extends ChangeNotifier {
 
   @override
   void dispose() {
-    // Synchronous cleanup - don't await in dispose
+    if (_useFfi && _dufsFfi.isLoaded) {
+      try { _dufsFfi.stop(); } catch (_) {}
+    }
     try { _process?.kill(); } catch (_) {}
     _process = null;
     _isRunning = false;

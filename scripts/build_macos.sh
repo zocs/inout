@@ -14,13 +14,13 @@ ARCHIVE_NAME="${APP_NAME}-${VERSION}-macos-${DISPLAY_ARCH}"
 
 echo "Building inout ${VERSION} for macOS ${DISPLAY_ARCH}..."
 
-# Build dufs from source (or skip if already present in assets/dufs/)
-DUFS_LOCAL="assets/dufs/dufs-macos-${DISPLAY_ARCH}"
-if [ -f "$DUFS_LOCAL" ]; then
-  echo "Using existing dufs binary: $DUFS_LOCAL"
+# Build dufs shared library (or skip if already present in assets/dufs/)
+DUFS_LIB="assets/dufs/libdufs-macos-${DISPLAY_ARCH}.dylib"
+if [ -f "$DUFS_LIB" ]; then
+  echo "Existing dufs library found: $DUFS_LIB (delete to rebuild from source)"
 else
   DUFS_PLATFORM=$([ "$ARCH" = "aarch64" ] && echo "macos-arm64" || echo "macos-x86_64")
-  echo "Compiling dufs from source for ${DUFS_PLATFORM}..."
+  echo "Compiling dufs shared library for ${DUFS_PLATFORM}..."
   bash "${SCRIPT_DIR}/build_dufs.sh" "$DUFS_PLATFORM"
 fi
 
@@ -40,11 +40,9 @@ if [ ! -d "$APP_BUNDLE" ]; then
 fi
 cp -r "$APP_BUNDLE" "${OUTPUT_DIR}/${APP_NAME}.app"
 
-# Include dufs binary in the app bundle
+# Include dufs shared library in the app bundle
 APP_CONTENTS="${OUTPUT_DIR}/${APP_NAME}.app/Contents/MacOS"
-# Flutter uses project name for executable
-cp "assets/dufs/dufs-macos-${DISPLAY_ARCH}" "${APP_CONTENTS}/dufs"
-chmod +x "${APP_CONTENTS}/dufs"
+cp "assets/dufs/libdufs-macos-${DISPLAY_ARCH}.dylib" "${APP_CONTENTS}/libdufs.dylib"
 
 echo "App contents:"
 ls -la "${APP_CONTENTS}/"
