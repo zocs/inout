@@ -11,6 +11,7 @@ import '../l10n/app_localizations.dart';
 import '../models/server_config.dart';
 import '../services/dufs_service.dart';
 import 'settings_page.dart';
+import 'log_page.dart';
 
 class HomePage extends StatefulWidget {
   final ServerConfig config;
@@ -483,6 +484,15 @@ class _HomePageState extends State<HomePage> with WindowListener, WidgetsBinding
               _stat(context, Icons.http, '${service.totalRequests}', 'Requests'),
               Container(width: 1, height: 24, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
               _stat(context, Icons.access_time, service.lastActivity ?? '--', 'Last'),
+              Container(width: 1, height: 24, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+              InkWell(
+                onTap: () => _showLogPage(context),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: _stat(context, Icons.history, '${service.transferLogs.length}', l10n.t('log.title')),
+                ),
+              ),
             ]),
           ),
         ]),
@@ -572,6 +582,15 @@ class _HomePageState extends State<HomePage> with WindowListener, WidgetsBinding
       Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.6))),
     ]);
+  }
+
+  void _showLogPage(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: Text(l10n.t('log.title'))),
+        body: LogPage(config: _config),
+      ),
+    ));
   }
 
   // ==================== Error Banner ====================

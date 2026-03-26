@@ -5,6 +5,7 @@ import 'package:network_info_plus/network_info_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../models/server_config.dart';
+import '../models/transfer_log.dart';
 
 class DufsService extends ChangeNotifier {
   static const _ch = MethodChannel('cc.merr.inout/native');
@@ -19,6 +20,8 @@ class DufsService extends ChangeNotifier {
   List<String> _allAddresses = [];
   /// 网卡名称列表，与 allAddresses 一一对应
   List<String> _allInterfaceNames = [];
+  /// 传输日志（最新的在前）
+  final List<TransferLog> _transferLogs = [];
 
   bool get isRunning => _isRunning;
   String? get serverUrl => _serverUrl;
@@ -28,6 +31,7 @@ class DufsService extends ChangeNotifier {
   String? get lastActivity => _lastActivity;
   List<String> get allAddresses => _allAddresses;
   List<String> get allInterfaceNames => _allInterfaceNames;
+  List<TransferLog> get transferLogs => List.unmodifiable(_transferLogs);
 
   void _log(String msg) {
     debugPrint(msg);
@@ -294,16 +298,30 @@ class DufsService extends ChangeNotifier {
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
-  /// 解析 dufs 输出行，更新请求计数和最后活跃时间
-  /// dufs 日志格式示例: "2024-01-01 12:00:00 | 200 | GET /path"
+  /// 解析 dufs 输出行，更新请求计数和日志列表
+  /// dufs 日志格式示例: "2026-03-26 12:00:00 | 200 | GET /path | 1234 | 192.168.1.100"
   void _trackActivity(String line) {
-    // 只匹配包含 " | 状态码 |" 格式的行，避免匹配端口号等
     final isRequest = RegExp(r'\|\s*[1-5]\d{2}\s*\|').hasMatch(line);
     if (isRequest) {
       _totalRequests++;
-      _lastActivity = DateTime.now().toIso8601String().substring(11, 19); // HH:mm:ss
+      _lastActivity = DateTime.now().toIso8601String().substring(11, 19);
+      // Try to parse full log entry
+      final entry = TransferLog.parse(line);
+      if (entry != null) {
+        _transferLogs.insert(0, entry); // newest first
+        // Keep max 200 entries
+        if (_transferLogs.length > 200) {
+          _transferLogs.removeRange(200, _transferLogs.length);
+        }
+      }
       notifyListeners();
     }
+  }
+
+  /// 清空传输日志
+  void clearLogs() {
+    _transferLogs.clear();
+    notifyListeners();
   }
 
   Future<void> stopServer() async {
@@ -318,7 +336,7 @@ class DufsService extends ChangeNotifier {
       _ch.invokeMethod('stopForegroundService').catchError((_) {});
     }
     _isRunning = false; _serverUrl = null; _totalRequests = 0; _lastActivity = null;
-    _allAddresses = []; _allInterfaceNames = [];
+    _allAddresses = []; _allInterfaceNames = []; _transferLogs.clear();
     notifyListeners();
   }
 
