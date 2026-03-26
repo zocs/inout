@@ -64,11 +64,11 @@ jobs:
           targets: x86_64-pc-windows-msvc
       - name: Compile dufs from source
         run: |
-          git clone --depth 1 --branch v0.45.0 https://github.com/sigoden/dufs.git C:\dufs
-          cd C:\dufs
+          git clone --depth 1 --branch v0.45.0 https://github.com/sigoden/dufs.git C:/dufs
+          cd C:/dufs
           cargo build --release --target x86_64-pc-windows-msvc
-          mkdir -p "${{ github.workspace }}\assets\dufs"
-          cp target\x86_64-pc-windows-msvc\release\dufs.exe "${{ github.workspace }}\assets\dufs\dufs-windows.exe"
+          mkdir -p "${{ github.workspace }}/assets/dufs"
+          cp C:/dufs/target/x86_64-pc-windows-msvc/release/dufs.exe "${{ github.workspace }}/assets/dufs/dufs-windows.exe"
         shell: bash
       - run: flutter build windows --release
       - name: Create zip

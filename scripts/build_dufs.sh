@@ -54,7 +54,7 @@ case "$PLATFORM" in
       Darwin*) HOST_TAG="darwin-x86_64" ;;
       *)       echo "Unsupported host"; exit 1 ;;
     esac
-    LINKER="${TOOLCHAIN}/${HOST_TAG}/bin/aarch64-linux-android21-clang"
+    LINKER="${TOOLCHAIN}/${HOST_TAG}/bin/aarch64-linux-android24-clang"
 
     mkdir -p .cargo
     cat > .cargo/config.toml << EOF
