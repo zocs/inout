@@ -31,22 +31,36 @@ RequestExecutionLevel admin
 !insertmacro MUI_LANGUAGE "English"
 
 ; Check if inout.exe is running, kill if user confirms
+; Uses a fast WMI-based check instead of slow tasklist
 !macro CheckAndKillProcess
-  nsExec::ExecToStack 'tasklist /FI "IMAGENAME eq ${APP_EXE}" /FO CSV /NH'
+  ; Quick check: if process exists, tasklist returns error code 0 with matching line
+  nsExec::ExecToStack 'cmd /c "tasklist /FI "IMAGENAME eq ${APP_EXE}" /NH 2>nul | findstr /I "${APP_EXE}""'
   Pop $0
   Pop $1
-  ${If} $1 != ""
-    ${If} $1 != "INFO: No tasks are running which match the specified criteria.$\n"
-    ${AndIf} $1 != "INFO: No tasks are running which match the specified criteria."
-      MessageBox MB_YESNOCANCEL|MB_ICONEXCLAMATION \
-        "${APP_NAME} 正在运行。是否关闭程序继续？$\n$\n${APP_NAME} is running. Close it to continue?$\n$\nYes=关闭并继续 / No=取消" \
-        IDYES kill IDNO cancel
-      cancel:
-        Abort
-      kill:
-        nsExec::ExecToLog 'taskkill /F /IM "${APP_EXE}"'
-        Sleep 1000
-    ${EndIf}
+  ${If} $0 == 0
+    ; Process found — ask user
+    MessageBox MB_YESNO|MB_ICONEXCLAMATION \
+      "${APP_NAME} is running. Close it and continue?" \
+      IDYES kill IDNO cancel
+    cancel:
+      Abort
+    kill:
+      nsExec::ExecToLog 'taskkill /F /IM "${APP_EXE}"'
+      ; Wait up to 10 seconds for process to exit
+      StrCpy $2 0
+      loop:
+        Sleep 500
+        IntOp $2 $2 + 1
+        nsExec::ExecToStack 'cmd /c "tasklist /FI "IMAGENAME eq ${APP_EXE}" /NH 2>nul | findstr /I "${APP_EXE}""'
+        Pop $0
+        Pop $1
+        ${If} $0 != 0
+          Goto done
+        ${EndIf}
+        ${If} $2 < 20
+          Goto loop
+        ${EndIf}
+      done:
   ${EndIf}
 !macroend
 

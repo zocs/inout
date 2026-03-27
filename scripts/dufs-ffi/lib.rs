@@ -249,14 +249,21 @@ fn create_listener(addr: SocketAddr) -> Result<TcpListener> {
     use std::thread;
     use std::time::Duration;
 
-    // Retry bind up to 5 times with delays (handles TIME_WAIT from previous instance)
+    // Retry bind up to 8 times with increasing delays (handles TIME_WAIT on Windows)
     let mut last_err = None;
-    for attempt in 0..5 {
+    for attempt in 0..8 {
         let socket = Socket::new(Domain::for_address(addr), Type::STREAM, Some(Protocol::TCP))?;
         if addr.is_ipv6() {
             socket.set_only_v6(true)?;
         }
         socket.set_reuse_address(true)?;
+        // On non-Windows, also set SO_REUSEPORT for faster rebinding
+        #[cfg(unix)]
+        {
+            let _ = socket.set_reuse_port(true);
+        }
+        // Set linger=0 to avoid TIME_WAIT on close
+        let _ = socket.set_linger(Some(Duration::from_secs(0)));
         match socket.bind(&addr.into()) {
             Ok(()) => {
                 socket.listen(1024)?;
@@ -267,15 +274,16 @@ fn create_listener(addr: SocketAddr) -> Result<TcpListener> {
             }
             Err(e) => {
                 last_err = Some(e);
-                if attempt < 4 {
+                if attempt < 7 {
+                    let delay = 200 * (attempt + 1) as u64;
                     eprintln!("[dufs-ffi] bind {} failed (attempt {}), retrying in {}ms...",
-                        addr, attempt + 1, 300 * (attempt + 1));
-                    thread::sleep(Duration::from_millis(300 * (attempt + 1) as u64));
+                        addr, attempt + 1, delay);
+                    thread::sleep(Duration::from_millis(delay));
                 }
             }
         }
     }
-    anyhow::bail!("Failed to bind {} after 5 attempts: {:?}", addr, last_err)
+    anyhow::bail!("Failed to bind {} after 8 attempts: {:?}", addr, last_err)
 }
 
 fn check_addrs(args: &Args) -> Result<(Vec<BindAddr>, Vec<BindAddr>)> {

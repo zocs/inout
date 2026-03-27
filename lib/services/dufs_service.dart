@@ -175,9 +175,13 @@ class DufsService extends ChangeNotifier {
       await _killOrphanDufs(config.port);
       await Future.delayed(const Duration(milliseconds: 500));
       if (!await _isPortAvailable(config.port)) {
-        _error = '端口 ${config.port} 已被占用，请更换端口';
-        notifyListeners();
-        return;
+        // In FFI mode, let the FFI binding retry handle TIME_WAIT — don't block here
+        if (!_useFfi) {
+          _error = '端口 ${config.port} 已被占用，请更换端口';
+          notifyListeners();
+          return;
+        }
+        _log('Port still in use, but FFI will retry binding...');
       }
     }
     try {
@@ -288,8 +292,10 @@ class DufsService extends ChangeNotifier {
     _log('dufs ffi start: $argsStr');
     final ret = _dufsFfi.start(argsStr);
     if (ret != 0) {
+      _log('dufs FFI start returned $ret (failure)');
       throw Exception('dufs FFI start returned $ret');
     }
+    _log('dufs FFI start returned 0 (success)');
     // Give the server a moment to bind
     await Future.delayed(const Duration(milliseconds: 500));
   }
@@ -383,6 +389,8 @@ class DufsService extends ChangeNotifier {
         await Future.delayed(const Duration(milliseconds: 200));
         if (!_dufsFfi.isRunning()) break;
       }
+      // Extra delay for OS to fully release the port (TIME_WAIT on Windows)
+      await Future.delayed(const Duration(milliseconds: 800));
     } else if (_process != null) {
       // Process mode (iOS): kill child process
       _process!.kill();
