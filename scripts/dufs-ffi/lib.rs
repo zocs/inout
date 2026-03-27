@@ -33,10 +33,13 @@ use hyper_util::server::conn::auto::Builder;
 use socket2::{Domain, Protocol, Socket, Type};
 use tokio::net::TcpListener;
 use tokio::runtime::Runtime;
+use tokio::sync::broadcast;
 
 static RUNNING: OnceLock<Arc<AtomicBool>> = OnceLock::new();
 // Keep runtime alive for the process lifetime
 static RUNTIME: OnceLock<Runtime> = OnceLock::new();
+// Shutdown channel to wake up blocking accept() calls
+static SHUTDOWN_TX: OnceLock<broadcast::Sender<()>> = OnceLock::new();
 
 /// Start the dufs server with CLI-style args string (e.g. "-b 0.0.0.0 -p 5000 /path").
 /// Returns 0 on success, -1 on error.
@@ -67,6 +70,10 @@ pub extern "C" fn dufs_stop() {
     if let Some(running) = RUNNING.get() {
         running.store(false, Ordering::SeqCst);
     }
+    // Wake up all blocking accept() calls
+    if let Some(tx) = SHUTDOWN_TX.get() {
+        let _ = tx.send(());
+    }
 }
 
 /// Check if the server is running. Returns 1 if running, 0 if not.
@@ -96,6 +103,10 @@ fn start_inner(args_str: &str) -> Result<()> {
     let running = Arc::new(AtomicBool::new(true));
     let _ = RUNNING.set(running.clone());
 
+    // Create shutdown channel (capacity 64 for all listener tasks)
+    let (shutdown_tx, _) = broadcast::channel::<()>(64);
+    let _ = SHUTDOWN_TX.set(shutdown_tx.clone());
+
     // Create tokio runtime and set as current (required for tokio::spawn)
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -106,7 +117,7 @@ fn start_inner(args_str: &str) -> Result<()> {
 
     // Spawn server tasks on the runtime
     let _handles = handle.block_on(async {
-        serve_on_runtime(args, running.clone())
+        serve_on_runtime(args, running.clone(), shutdown_tx)
     })?;
     eprintln!("[dufs-ffi] Server started with {} listeners", _handles.len());
 
@@ -130,6 +141,7 @@ fn start_inner(args_str: &str) -> Result<()> {
 fn serve_on_runtime(
     args: Args,
     running: Arc<AtomicBool>,
+    shutdown_tx: broadcast::Sender<()>,
 ) -> Result<Vec<tokio::task::JoinHandle<()>>> {
     let addrs = args.addrs.clone();
     let port = args.port;
@@ -140,14 +152,19 @@ fn serve_on_runtime(
         let server_handle = server_handle.clone();
         match bind_addr {
             BindAddr::IpAddr(ip) => {
-                let listener = create_listener(SocketAddr::new(*ip, port))?;
+                let mut listener = create_listener(SocketAddr::new(*ip, port))?;
+                let mut shutdown_rx = shutdown_tx.subscribe();
                 let handle = tokio::spawn(async move {
                     loop {
-                        let Ok((stream, addr)) = listener.accept().await else {
-                            continue;
-                        };
-                        let stream = TokioIo::new(stream);
-                        tokio::spawn(handle_stream(server_handle.clone(), stream, Some(addr)));
+                        tokio::select! {
+                            result = listener.accept() => {
+                                if let Ok((stream, addr)) = result {
+                                    let stream = TokioIo::new(stream);
+                                    tokio::spawn(handle_stream(server_handle.clone(), stream, Some(addr)));
+                                }
+                            }
+                            _ = shutdown_rx.recv() => break,
+                        }
                     }
                 });
                 handles.push(handle);
@@ -165,14 +182,19 @@ fn serve_on_runtime(
                     let _ = std::fs::remove_file(path);
                     path.into()
                 };
-                let listener = tokio::net::UnixListener::bind(socket_path)?;
+                let mut listener = tokio::net::UnixListener::bind(socket_path)?;
+                let mut shutdown_rx = shutdown_tx.subscribe();
                 let handle = tokio::spawn(async move {
                     loop {
-                        let Ok((stream, _addr)) = listener.accept().await else {
-                            continue;
-                        };
-                        let stream = TokioIo::new(stream);
-                        tokio::spawn(handle_stream(server_handle.clone(), stream, None));
+                        tokio::select! {
+                            result = listener.accept() => {
+                                if let Ok((stream, _addr)) = result {
+                                    let stream = TokioIo::new(stream);
+                                    tokio::spawn(handle_stream(server_handle.clone(), stream, None));
+                                }
+                            }
+                            _ = shutdown_rx.recv() => break,
+                        }
                     }
                 });
                 handles.push(handle);

@@ -378,6 +378,11 @@ class DufsService extends ChangeNotifier {
     if (_useFfi && _dufsFfi.isLoaded) {
       // FFI mode: stop the in-process server
       _dufsFfi.stop();
+      // Wait for the server to release the port (accept() may be blocking)
+      for (int i = 0; i < 20; i++) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        if (!_dufsFfi.isRunning) break;
+      }
     } else if (_process != null) {
       // Process mode (iOS): kill child process
       _process!.kill();
