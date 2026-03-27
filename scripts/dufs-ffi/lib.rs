@@ -19,7 +19,7 @@ mod utils;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use crate::args::{build_cli, Args, BindAddr};
 use crate::server::Server;
@@ -31,15 +31,16 @@ use hyper::{body::Incoming, service::service_fn, Request};
 use hyper_util::rt::{TokioExecutor, TokioIo};
 use hyper_util::server::conn::auto::Builder;
 use socket2::{Domain, Protocol, Socket, Type};
+use std::sync::Mutex;
+
 use tokio::net::TcpListener;
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast;
 
-static RUNNING: OnceLock<Arc<AtomicBool>> = OnceLock::new();
-// Keep runtime alive for the process lifetime
-static RUNTIME: OnceLock<Runtime> = OnceLock::new();
-// Shutdown channel to wake up blocking accept() calls
-static SHUTDOWN_TX: OnceLock<broadcast::Sender<()>> = OnceLock::new();
+// All state wrapped in Mutex<Option<T>> so we can reset on stop/start cycles
+static RUNNING: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
+static RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
+static SHUTDOWN_TX: Mutex<Option<broadcast::Sender<()>>> = Mutex::new(None);
 
 /// Start the dufs server with CLI-style args string (e.g. "-b 0.0.0.0 -p 5000 /path").
 /// Returns 0 on success, -1 on error.
@@ -67,22 +68,41 @@ pub extern "C" fn dufs_start(args_ptr: *const c_char) -> i32 {
 /// Stop the dufs server gracefully.
 #[no_mangle]
 pub extern "C" fn dufs_stop() {
-    if let Some(running) = RUNNING.get() {
-        running.store(false, Ordering::SeqCst);
+    if let Ok(mut guard) = RUNNING.lock() {
+        if let Some(ref running) = *guard {
+            running.store(false, Ordering::SeqCst);
+        }
     }
     // Wake up all blocking accept() calls
-    if let Some(tx) = SHUTDOWN_TX.get() {
-        let _ = tx.send(());
+    if let Ok(mut guard) = SHUTDOWN_TX.lock() {
+        if let Some(ref tx) = *guard {
+            let _ = tx.send(());
+        }
+    }
+    // Drop runtime to release all resources (listeners, sockets, etc.)
+    if let Ok(mut guard) = RUNTIME.lock() {
+        *guard = None;
+    }
+    // Clear statics for next start
+    if let Ok(mut guard) = RUNNING.lock() {
+        *guard = None;
+    }
+    if let Ok(mut guard) = SHUTDOWN_TX.lock() {
+        *guard = None;
     }
 }
 
 /// Check if the server is running. Returns 1 if running, 0 if not.
 #[no_mangle]
 pub extern "C" fn dufs_is_running() -> i32 {
-    match RUNNING.get() {
-        Some(r) if r.load(Ordering::SeqCst) => 1,
-        _ => 0,
+    if let Ok(guard) = RUNNING.lock() {
+        if let Some(ref running) = *guard {
+            if running.load(Ordering::SeqCst) {
+                return 1;
+            }
+        }
     }
+    0
 }
 
 fn start_inner(args_str: &str) -> Result<()> {
@@ -101,11 +121,15 @@ fn start_inner(args_str: &str) -> Result<()> {
     args.addrs = new_addrs;
 
     let running = Arc::new(AtomicBool::new(true));
-    let _ = RUNNING.set(running.clone());
+    if let Ok(mut guard) = RUNNING.lock() {
+        *guard = Some(running.clone());
+    }
 
     // Create shutdown channel (capacity 64 for all listener tasks)
     let (shutdown_tx, _) = broadcast::channel::<()>(64);
-    let _ = SHUTDOWN_TX.set(shutdown_tx.clone());
+    if let Ok(mut guard) = SHUTDOWN_TX.lock() {
+        *guard = Some(shutdown_tx.clone());
+    }
 
     // Create tokio runtime and set as current (required for tokio::spawn)
     let rt = tokio::runtime::Builder::new_multi_thread()
@@ -123,7 +147,9 @@ fn start_inner(args_str: &str) -> Result<()> {
 
     // Keep runtime alive 鈥?move it into static AFTER spawning tasks
     // (RUNTIME is OnceLock, so we set it once)
-    let _ = RUNTIME.set(rt);
+    if let Ok(mut guard) = RUNTIME.lock() {
+        *guard = Some(rt);
+    }
     // Note: handles are now running on the stored runtime.
     // We don't need to join them 鈥?they run until the process exits or running=false.
 
