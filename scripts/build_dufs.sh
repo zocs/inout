@@ -80,11 +80,11 @@ EOF
     export AR="${TOOLCHAIN}/${HOST_TAG}/bin/llvm-ar"
     export RANLIB="${TOOLCHAIN}/${HOST_TAG}/bin/llvm-ranlib"
 
-    cargo build --lib --release --target "$RUST_TARGET"
+    cargo build --release --target "$RUST_TARGET"
 
     LIB_OUTPUT="${PROJECT_DIR}/android/app/src/main/jniLibs/arm64-v8a/libdufs.so"
     mkdir -p "$(dirname "$LIB_OUTPUT")"
-    cp "target/${RUST_TARGET}/release/libdufs.so" "$LIB_OUTPUT"
+    cp "target/${RUST_TARGET}/release/dufs" "$LIB_OUTPUT"
     echo "Built: $LIB_OUTPUT ($(du -h "$LIB_OUTPUT" | cut -f1))"
     ;;
 
