@@ -1,0 +1,6 @@
+### v0.2.8
+- Android release signing: local and CI builds now use the same keystore, no more uninstall-reinstall
+- FFI re-entry protection: prevent double-start crash
+- Android service concurrency fix: race condition on rapid start/stop
+- NSIS installer quote escaping fix
+- F-Droid version sync

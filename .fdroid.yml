@@ -28,9 +28,9 @@ RepoType: git
 Repo: https://github.com/zocs/inout
 
 Builds:
-  - versionName: 0.2.4
-    versionCode: 24
-    commit: v0.2.4
+  - versionName: 0.2.8
+    versionCode: 28
+    commit: v0.2.8
     subdir: android
     sudo:
       - apt-get update

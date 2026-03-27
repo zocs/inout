@@ -1,0 +1,16 @@
+inout lets you share files from your device to any browser on your local network — no internet, no accounts, no cloud.
+
+Just pick a folder, tap start, and anyone on the same Wi-Fi can access your files instantly.
+
+Features:
+• One-tap file sharing via HTTP
+• Upload files from any browser
+• QR code for easy access
+• File transfer log
+• Customizable permissions (read-only, upload, full)
+• Multi-language support (English, 简体中文, 繁體中文)
+• Material 3 design with 6 color themes
+• Desktop drag & drop support
+• System tray integration
+
+Your files stay on your local network — nothing leaves your device.
