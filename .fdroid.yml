@@ -58,7 +58,8 @@ Builds:
       - cd ..
       - flutter build apk --release
 
-AllowedAPKSigningKeys: []
+AllowedAPKSigningKeys:
+  - E4DB9054FF7070E4BEE3387E928E1388FACFEC0526DA10E4510282E9D26AED6A
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
