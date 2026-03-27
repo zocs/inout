@@ -1,4 +1,4 @@
-// lib.rs — FFI wrapper for dufs
+﻿// lib.rs 鈥?FFI wrapper for dufs
 // Exposes dufs_start / dufs_stop for embedding in Flutter (dart:ffi)
 
 #[macro_use]
@@ -96,18 +96,25 @@ fn start_inner(args_str: &str) -> Result<()> {
     let running = Arc::new(AtomicBool::new(true));
     let _ = RUNNING.set(running.clone());
 
-    // Create tokio runtime (kept alive in static)
-    let rt = Runtime::new().map_err(|e| anyhow!("Failed to create runtime: {e}"))?;
+    // Create tokio runtime and set as current (required for tokio::spawn)
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| anyhow!("Failed to create runtime: {e}"))?;
+
+    let handle = rt.handle().clone();
 
     // Spawn server tasks on the runtime
-    let handles = serve_on_runtime(&rt, args, running.clone())?;
-    eprintln!("[dufs-ffi] Server started with {} listeners", handles.len());
+    let _handles = handle.block_on(async {
+        serve_on_runtime(args, running.clone())
+    })?;
+    eprintln!("[dufs-ffi] Server started with {} listeners", _handles.len());
 
-    // Keep runtime alive — move it into static AFTER spawning tasks
+    // Keep runtime alive 鈥?move it into static AFTER spawning tasks
     // (RUNTIME is OnceLock, so we set it once)
     let _ = RUNTIME.set(rt);
     // Note: handles are now running on the stored runtime.
-    // We don't need to join them — they run until the process exits or running=false.
+    // We don't need to join them 鈥?they run until the process exits or running=false.
 
     // Monitor thread: poll running flag, print when stopped
     std::thread::spawn(move || {
@@ -121,7 +128,6 @@ fn start_inner(args_str: &str) -> Result<()> {
 }
 
 fn serve_on_runtime(
-    rt: &Runtime,
     args: Args,
     running: Arc<AtomicBool>,
 ) -> Result<Vec<tokio::task::JoinHandle<()>>> {
@@ -135,7 +141,7 @@ fn serve_on_runtime(
         match bind_addr {
             BindAddr::IpAddr(ip) => {
                 let listener = create_listener(SocketAddr::new(*ip, port))?;
-                let handle = rt.spawn(async move {
+                let handle = tokio::spawn(async move {
                     loop {
                         let Ok((stream, addr)) = listener.accept().await else {
                             continue;
@@ -160,7 +166,7 @@ fn serve_on_runtime(
                     path.into()
                 };
                 let listener = tokio::net::UnixListener::bind(socket_path)?;
-                let handle = rt.spawn(async move {
+                let handle = tokio::spawn(async move {
                     loop {
                         let Ok((stream, _addr)) = listener.accept().await else {
                             continue;
