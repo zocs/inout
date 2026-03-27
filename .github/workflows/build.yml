@@ -63,12 +63,7 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
       - name: Compile dufs from source
-        run: |
-          git clone --depth 1 --branch v0.45.0 https://github.com/zocs/dufs.git C:/dufs
-          cd C:/dufs
-          cargo build --lib --release --target x86_64-pc-windows-msvc
-          mkdir -p "${{ github.workspace }}/assets/dufs"
-          cp C:/dufs/target/x86_64-pc-windows-msvc/release/dufs.dll "${{ github.workspace }}/assets/dufs/dufs-windows-x86_64.dll"
+        run: bash scripts/build_dufs.sh windows-x86_64
         shell: bash
       - run: flutter build windows --release
       - name: Copy dufs DLL to build output

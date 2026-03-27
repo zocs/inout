@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # build_dufs.sh - Compile dufs from source for a given platform
 # Usage: bash scripts/build_dufs.sh <platform>
 #   platform: android-arm64 | linux-x86_64 | linux-arm64 | windows-x86_64 | macos-arm64 | macos-x86_64 | ios-arm64
@@ -35,9 +35,13 @@ DUFS_FFI_DIR="${SCRIPT_DIR}/dufs-ffi"
 if [ -d "$DUFS_FFI_DIR" ]; then
   echo "Applying FFI modifications..."
   cp "${DUFS_FFI_DIR}/lib.rs" "${DUFS_SRC}/src/lib.rs"
-  # Ensure Cargo.toml has [lib] section
+  # Ensure Cargo.toml has [lib] section (BSD/GNU sed compatible)
   if ! grep -q '^\[lib\]' "${DUFS_SRC}/Cargo.toml"; then
-    sed -i '1i\[lib]\nname = "dufs"\ncrate-type = ["cdylib", "rlib"]\n' "${DUFS_SRC}/Cargo.toml"
+    TMPFILE="${DUFS_SRC}/Cargo.toml.tmp"
+    printf '%s\n\n%s\n' '[lib]
+name = "dufs"
+crate-type = ["cdylib", "rlib"]' "$(cat "${DUFS_SRC}/Cargo.toml")" > "$TMPFILE"
+    mv "$TMPFILE" "${DUFS_SRC}/Cargo.toml"
   fi
 fi
 
@@ -114,23 +118,26 @@ EOF
     ;;
 
   windows-x86_64)
-    RUST_TARGET="x86_64-pc-windows-gnu"
-
-    command -v rustup >/dev/null 2>&1 && rustup target add "$RUST_TARGET"
-    sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
-
     mkdir -p .cargo
-    cat > .cargo/config.toml << EOF
+    if [ "$(uname -s | cut -c1-6)" = "MINGW" ] || [ "$(uname -s | cut -c1-5)" = "MSYS" ]; then
+      # Native Windows build (CI runs on windows-latest)
+      RUST_TARGET="x86_64-pc-windows-msvc"
+      cargo build --lib --release --target "$RUST_TARGET"
+      cp "target/${RUST_TARGET}/release/dufs.dll" "${OUTPUT_DIR}/dufs-windows-x86_64.dll"
+    else
+      # Cross-compile from Linux
+      RUST_TARGET="x86_64-pc-windows-gnu"
+      command -v rustup >/dev/null 2>&1 && rustup target add "$RUST_TARGET"
+      sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
+      cat > .cargo/config.toml << EOF
 [target.x86_64-pc-windows-gnu]
 linker = "x86_64-w64-mingw32-gcc"
 EOF
-
-    export CC="x86_64-w64-mingw32-gcc"
-    cargo build --lib --release --target "$RUST_TARGET"
-
-    cp "target/${RUST_TARGET}/release/dufs.dll" "${OUTPUT_DIR}/dufs-windows-x86_64.dll"
-    echo "Built: ${OUTPUT_DIR}/dufs-windows-x86_64.dll ($(du -h "${OUTPUT_DIR}/dufs-windows-x86_64.dll" | cut -f1))"
-    ;;
+      export CC="x86_64-w64-mingw32-gcc"
+      cargo build --lib --release --target "$RUST_TARGET"
+      cp "target/${RUST_TARGET}/release/dufs.dll" "${OUTPUT_DIR}/dufs-windows-x86_64.dll"
+    fi
+    echo "Built: ${OUTPUT_DIR}/dufs-windows-x86_64.dll"
 
   macos-arm64)
     RUST_TARGET="aarch64-apple-darwin"
