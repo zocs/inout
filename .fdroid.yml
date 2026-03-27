@@ -62,5 +62,5 @@ AllowedAPKSigningKeys: []
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.2.6
-CurrentVersionCode: 26
+CurrentVersion: 0.2.8
+CurrentVersionCode: 28
