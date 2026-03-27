@@ -246,17 +246,36 @@ async fn handle_stream<T>(
 }
 
 fn create_listener(addr: SocketAddr) -> Result<TcpListener> {
-    let socket = Socket::new(Domain::for_address(addr), Type::STREAM, Some(Protocol::TCP))?;
-    if addr.is_ipv6() {
-        socket.set_only_v6(true)?;
+    use std::thread;
+    use std::time::Duration;
+
+    // Retry bind up to 5 times with delays (handles TIME_WAIT from previous instance)
+    let mut last_err = None;
+    for attempt in 0..5 {
+        let socket = Socket::new(Domain::for_address(addr), Type::STREAM, Some(Protocol::TCP))?;
+        if addr.is_ipv6() {
+            socket.set_only_v6(true)?;
+        }
+        socket.set_reuse_address(true)?;
+        match socket.bind(&addr.into()) {
+            Ok(()) => {
+                socket.listen(1024)?;
+                let std_listener = StdTcpListener::from(socket);
+                std_listener.set_nonblocking(true)?;
+                let listener = TcpListener::from_std(std_listener)?;
+                return Ok(listener);
+            }
+            Err(e) => {
+                last_err = Some(e);
+                if attempt < 4 {
+                    eprintln!("[dufs-ffi] bind {} failed (attempt {}), retrying in {}ms...",
+                        addr, attempt + 1, 300 * (attempt + 1));
+                    thread::sleep(Duration::from_millis(300 * (attempt + 1) as u64));
+                }
+            }
+        }
     }
-    socket.set_reuse_address(true)?;
-    socket.bind(&addr.into())?;
-    socket.listen(1024)?;
-    let std_listener = StdTcpListener::from(socket);
-    std_listener.set_nonblocking(true)?;
-    let listener = TcpListener::from_std(std_listener)?;
-    Ok(listener)
+    anyhow::bail!("Failed to bind {} after 5 attempts: {:?}", addr, last_err)
 }
 
 fn check_addrs(args: &Args) -> Result<(Vec<BindAddr>, Vec<BindAddr>)> {
