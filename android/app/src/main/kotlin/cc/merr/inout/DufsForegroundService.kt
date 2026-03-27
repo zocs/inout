@@ -54,11 +54,17 @@ class DufsForegroundService : Service() {
         // Kill existing process if any
         killDufs()
 
+        // IMPORTANT: call startForeground() immediately to avoid Android timeout exception
+        // This must happen BEFORE any blocking operations (like starting dufs)
+        val notification = buildNotification(port, path)
+        startForeground(NOTIFICATION_ID, notification)
+
         // Start new process (order matters: process first, state after)
         lastError = null
         val success = startDufs(port, path, args)
         if (!success) {
             Log.e(TAG, "Failed to start dufs, stopping service")
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -68,8 +74,6 @@ class DufsForegroundService : Service() {
         currentPath = path
         isRunning = true
 
-        val notification = buildNotification(port, path)
-        startForeground(NOTIFICATION_ID, notification)
         Log.d(TAG, "Service started: port=$port path=$path")
         return START_STICKY
     }
@@ -90,8 +94,10 @@ class DufsForegroundService : Service() {
 
             val pb = ProcessBuilder(fullArgs)
             pb.directory(java.io.File(path))
-            // Don't redirect error stream - let dufs manage its own I/O freely
-            // Reading process I/O on Android can interfere with network sockets
+            // Redirect stderr to a log file for debugging
+            val errLog = java.io.File(cacheDir, "dufs_stderr.log")
+            pb.redirectErrorStream(false)
+            pb.redirectError(errLog)
             dufsProcess = pb.start()
 
             // Startup verification: wait 300ms then check if process is still alive
@@ -104,7 +110,9 @@ class DufsForegroundService : Service() {
             }
 
             if (!alive) {
-                lastError = "dufs process exited immediately after start"
+                // Read stderr for error details
+                val errOutput = try { errLog.readText().take(500) } catch (_: Exception) { "" }
+                lastError = "dufs process exited immediately${if (errOutput.isNotEmpty()) ": $errOutput" else ""}"
                 Log.e(TAG, lastError ?: "")
                 dufsProcess = null
                 false
