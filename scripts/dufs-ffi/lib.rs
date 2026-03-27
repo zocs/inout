@@ -106,6 +106,17 @@ pub extern "C" fn dufs_is_running() -> i32 {
 }
 
 fn start_inner(args_str: &str) -> Result<()> {
+    // Prevent double-start: if a server is already running, stop it first
+    {
+        let running_guard = RUNNING.lock().map_err(|_| anyhow!("RUNNING lock poisoned"))?;
+        if running_guard.is_some() {
+            drop(running_guard);
+            // Clean up the old server before starting a new one
+            dufs_stop();
+            std::thread::sleep(Duration::from_millis(200));
+        }
+    }
+
     // Build argv from args string
     let argv: Vec<String> = std::iter::once("dufs".to_owned())
         .chain(args_str.split_whitespace().map(|s| s.to_owned()))

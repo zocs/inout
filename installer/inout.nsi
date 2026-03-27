@@ -33,8 +33,7 @@ RequestExecutionLevel admin
 ; Check if inout.exe is running, kill if user confirms
 ; Uses a fast WMI-based check instead of slow tasklist
 !macro CheckAndKillProcess
-  ; Quick check: if process exists, tasklist returns error code 0 with matching line
-  nsExec::ExecToStack 'cmd /c "tasklist /FI "IMAGENAME eq ${APP_EXE}" /NH 2>nul | findstr /I "${APP_EXE}""'
+  nsExec::ExecToStack 'cmd /c tasklist /FI "IMAGENAME eq ${APP_EXE}" /NH 2^>nul ^| findstr /I "${APP_EXE}"'
   Pop $0
   Pop $1
   ${If} $0 == 0
@@ -51,7 +50,7 @@ RequestExecutionLevel admin
       loop:
         Sleep 500
         IntOp $2 $2 + 1
-        nsExec::ExecToStack 'cmd /c "tasklist /FI "IMAGENAME eq ${APP_EXE}" /NH 2>nul | findstr /I "${APP_EXE}""'
+        nsExec::ExecToStack 'cmd /c tasklist /FI "IMAGENAME eq ${APP_EXE}" /NH 2^>nul ^| findstr /I "${APP_EXE}"'
         Pop $0
         Pop $1
         ${If} $0 != 0

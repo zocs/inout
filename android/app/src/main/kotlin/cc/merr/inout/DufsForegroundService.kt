@@ -34,6 +34,8 @@ class DufsForegroundService : Service() {
         createNotificationChannel()
     }
 
+    private val startLock = Object()
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val port = intent?.getIntExtra("port", 0) ?: 0
         val path = intent?.getStringExtra("path") ?: ""
@@ -45,37 +47,39 @@ class DufsForegroundService : Service() {
             return START_NOT_STICKY
         }
 
-        // Already running with same config — no-op
-        if (isRunning && port == currentPort && path == currentPath) {
-            Log.d(TAG, "Already running on port=$port, skip")
+        synchronized(startLock) {
+            // Already running with same config — no-op
+            if (isRunning && port == currentPort && path == currentPath) {
+                Log.d(TAG, "Already running on port=$port, skip")
+                return START_STICKY
+            }
+
+            // Kill existing process if any
+            killDufs()
+
+            // IMPORTANT: call startForeground() immediately to avoid Android timeout exception
+            // This must happen BEFORE any blocking operations (like starting dufs)
+            val notification = buildNotification(port, path)
+            startForeground(NOTIFICATION_ID, notification)
+
+            // Start new process (order matters: process first, state after)
+            lastError = null
+            val success = startDufs(port, path, args)
+            if (!success) {
+                Log.e(TAG, "Failed to start dufs, stopping service")
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return START_NOT_STICKY
+            }
+
+            // Process started successfully — now update state
+            currentPort = port
+            currentPath = path
+            isRunning = true
+
+            Log.d(TAG, "Service started: port=$port path=$path")
             return START_STICKY
         }
-
-        // Kill existing process if any
-        killDufs()
-
-        // IMPORTANT: call startForeground() immediately to avoid Android timeout exception
-        // This must happen BEFORE any blocking operations (like starting dufs)
-        val notification = buildNotification(port, path)
-        startForeground(NOTIFICATION_ID, notification)
-
-        // Start new process (order matters: process first, state after)
-        lastError = null
-        val success = startDufs(port, path, args)
-        if (!success) {
-            Log.e(TAG, "Failed to start dufs, stopping service")
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
-        // Process started successfully — now update state
-        currentPort = port
-        currentPath = path
-        isRunning = true
-
-        Log.d(TAG, "Service started: port=$port path=$path")
-        return START_STICKY
     }
 
     /**
