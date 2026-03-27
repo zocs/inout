@@ -161,15 +161,16 @@ XEOF
     ;;
 
   ios-arm64)
+    # iOS doesn't support cdylib — build as binary (subprocess approach)
     RUST_TARGET="aarch64-apple-ios"
     FRAMEWORKS_DIR="${PROJECT_DIR}/ios/Frameworks"
 
     command -v rustup >/dev/null 2>&1 && rustup target add "$RUST_TARGET"
-    cargo build --lib --release --target "$RUST_TARGET"
+    cargo build --release --target "$RUST_TARGET"
 
     mkdir -p "$FRAMEWORKS_DIR"
-    cp "target/${RUST_TARGET}/release/libdufs.a" "${FRAMEWORKS_DIR}/libdufs.a"
-    echo "Built: ${FRAMEWORKS_DIR}/libdufs.a ($(du -h "${FRAMEWORKS_DIR}/libdufs.a" | cut -f1))"
+    cp "target/${RUST_TARGET}/release/dufs" "${FRAMEWORKS_DIR}/dufs"
+    echo "Built: ${FRAMEWORKS_DIR}/dufs"
     ;;
 
   *)
