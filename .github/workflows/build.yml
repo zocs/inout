@@ -35,9 +35,23 @@ jobs:
           echo "NDK found at: $NDK"
           export ANDROID_NDK_HOME="$NDK"
           bash scripts/build_dufs.sh android-arm64
+      - name: Decode Keystore
+        if: env.KEYSTORE_BASE64 != ''
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > /tmp/inout-release.jks
+          echo "KEYSTORE_FILE=/tmp/inout-release.jks" >> $GITHUB_ENV
+          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
       - name: Build APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: flutter build apk --release
       - name: Build AAB
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: flutter build appbundle --release
       - name: Rename APK
         run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ github.ref_name }}-android-arm64.apk
