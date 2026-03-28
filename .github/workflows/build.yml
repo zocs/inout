@@ -18,6 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Extract version
+        shell: bash
+        run: echo "VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | tr -d '+')" >> $GITHUB_ENV
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -48,27 +51,22 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: flutter build apk --release
-      - name: Build AAB
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: flutter build appbundle --release
       - name: Rename APK
-        run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ github.ref_name }}-android-arm64.apk
-      - name: Rename AAB
-        run: cp build/app/outputs/bundle/release/app-release.aab inout-${{ github.ref_name }}-android-arm64.aab
+        run: cp build/app/outputs/flutter-apk/app-release.apk inout-${{ env.VERSION }}-android-arm64.apk
       - uses: actions/upload-artifact@v4
         with:
           name: android
           path: |
-            inout-${{ github.ref_name }}-android-arm64.apk
-            inout-${{ github.ref_name }}-android-arm64.aab
+            inout-${{ env.VERSION }}-android-arm64.apk
 
   build-windows:
     name: Windows x64
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Extract version
+        shell: bash
+        run: echo "VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | tr -d '+')" >> $GITHUB_ENV
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.5'
@@ -84,7 +82,7 @@ jobs:
         shell: bash
         run: cp "${{ github.workspace }}/assets/dufs/dufs-windows-x86_64.dll" build/windows/x64/runner/Release/dufs.dll
       - name: Create zip
-        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath inout-${{ github.ref_name }}-windows-x64.zip
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath inout-${{ env.VERSION }}-windows-x64.zip
       - name: Install NSIS
         run: |
           choco install nsis -y
@@ -95,13 +93,13 @@ jobs:
         shell: bash
         run: |
           EXE=$(ls inout-*-windows-x64-setup.exe | head -1)
-          mv "$EXE" inout-${{ github.ref_name }}-windows-x64-setup.exe
+          mv "$EXE" inout-${{ env.VERSION }}-windows-x64-setup.exe
       - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: |
-            inout-${{ github.ref_name }}-windows-x64.zip
-            inout-${{ github.ref_name }}-windows-x64-setup.exe
+            inout-${{ env.VERSION }}-windows-x64.zip
+            inout-${{ env.VERSION }}-windows-x64-setup.exe
 
   build-linux-x64:
     name: Linux x64
@@ -223,7 +221,7 @@ jobs:
 
             | Platform | Files | Status |
             |----------|-------|--------|
-            | Android | `.apk` + `.aab` (Play Store) | ✅ |
+            | Android | `.apk` | ✅ |
             | iOS | `.zip` (app bundle) | ⚠️ 未签名，未实机测试 |
             | Windows x64 | `.zip` (portable) | ✅ |
             | macOS ARM64 | `.zip` (app bundle) | ⚠️ 未签名，未实机测试 |
@@ -237,7 +235,6 @@ jobs:
             artifacts/**/*.rpm
             artifacts/**/*.tar.gz
             artifacts/**/*.apk
-            artifacts/**/*.aab
             artifacts/**/*.zip
             artifacts/**/*.exe
             artifacts/**/*.dmg
