@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📦 inout
+# <img src="fastlane/metadata/android/en-US/icon.png" width="40"> inout
 
 **轻点一下，文件分享即刻在线。**
 
@@ -260,6 +260,6 @@ installer/inout.nsi                 # Windows NSIS 安装包
 
 <div align="center">
 
-**inout** — 让文件来去自如。🚀
+**inout** — 让文件来去自如。
 
 </div>
