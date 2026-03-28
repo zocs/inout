@@ -1,6 +1,6 @@
 <div align="center">
 
-# <img src="fastlane/metadata/android/en-US/icon.png" width="32"> inout
+<h1><img src="fastlane/metadata/android/en-US/icon.png" width="48" align="absmiddle"> inout</h1>
 
 **Files in and out, that's all.** — 轻点一下，文件分享即刻在线。
 
