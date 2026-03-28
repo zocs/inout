@@ -24,6 +24,12 @@
 
 ---
 
+## 📱 截图
+
+[![Screenshots](fastlane/metadata/android/en-US/phoneScreenshots/screenshots_overview.jpg)](fastlane/metadata/android/en-US/phoneScreenshots/screenshots_overview.jpg)
+
+---
+
 ## ✨ 为什么选择 inout？
 
 > **对方无需安装 APP** — 只需在一台设备上安装 inout，启动服务器，任何人通过浏览器即可访问和传输文件。
