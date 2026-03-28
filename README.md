@@ -26,9 +26,13 @@ A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). 
 
 ## 📱 Screenshots
 
-| | | | | |
-|:---:|:---:|:---:|:---:|:---:|
-| <img src="fastlane/metadata/android/en-US/phoneScreenshots/1_inout.jpg" width="200"> | <img src="fastlane/metadata/android/en-US/phoneScreenshots/2_inout.jpg" width="200"> | <img src="fastlane/metadata/android/en-US/phoneScreenshots/3_inout.jpg" width="200"> | <img src="fastlane/metadata/android/en-US/phoneScreenshots/4_inout.jpg" width="200"> | <img src="fastlane/metadata/android/en-US/phoneScreenshots/5_inout.jpg" width="200"> |
+<table><tr>
+<td><img src="fastlane/metadata/android/en-US/phoneScreenshots/1_inout.jpg" width="300"></td>
+<td><img src="fastlane/metadata/android/en-US/phoneScreenshots/2_inout.jpg" width="300"></td>
+<td><img src="fastlane/metadata/android/en-US/phoneScreenshots/3_inout.jpg" width="300"></td>
+<td><img src="fastlane/metadata/android/en-US/phoneScreenshots/4_inout.jpg" width="300"></td>
+<td><img src="fastlane/metadata/android/en-US/phoneScreenshots/5_inout.jpg" width="300"></td>
+</tr></table>
 
 ---
 
