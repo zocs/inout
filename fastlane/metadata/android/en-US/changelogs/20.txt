@@ -1,0 +1,1 @@
+Multi-network address list, desktop drag & drop, system tray, close behavior config, Android 8 fix, splash screen, orphan process cleanup

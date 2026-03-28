@@ -1,0 +1,1 @@
+Compile dufs from source for all platforms (F-Droid compatible), AAB build for Play Store

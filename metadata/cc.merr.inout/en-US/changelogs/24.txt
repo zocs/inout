@@ -1,4 +1,0 @@
-0.2.4
-- Transfer log page with IP highlighting and stats summary
-- Smart log filtering (filters directory listings, 304 cache, WebDAV ops)
-- dufs watchdog log file approach for Android stability

@@ -1,0 +1,1 @@
+Version sync, NSIS installer quote fix, FFI re-entry protection, Android concurrency fix, F-Droid version update

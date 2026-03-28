@@ -1,0 +1,1 @@
+Android Native Service architecture (persistent process), back button confirmation, address list display, transfer log

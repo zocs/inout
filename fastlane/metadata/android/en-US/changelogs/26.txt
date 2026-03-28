@@ -1,0 +1,1 @@
+Desktop FFI architecture (dart:ffi replaces Process.start), Rust FFI with proper shutdown, source-based dufs compilation (7 platforms), iOS support

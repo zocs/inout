@@ -21,6 +21,15 @@ A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). 
 
 ---
 
+## 📱 Screenshots
+
+| | | |
+|:---:|:---:|:---:|
+| ![Home](fastlane/metadata/android/en-US/phoneScreenshots/1_inout.jpg) | ![Transfer](fastlane/metadata/android/en-US/phoneScreenshots/2_inout.jpg) | ![QR Code](fastlane/metadata/android/en-US/phoneScreenshots/3_inout.jpg) |
+| ![Settings](fastlane/metadata/android/en-US/phoneScreenshots/4_inout.jpg) | ![Logs](fastlane/metadata/android/en-US/phoneScreenshots/5_inout.jpg) | |
+
+---
+
 ## ✨ Why inout?
 
 > **The other side doesn't need an app.** Install inout on ONE device, start the server, and anyone with a browser can upload and download files.
