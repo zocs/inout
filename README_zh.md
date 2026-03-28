@@ -13,6 +13,7 @@
 [![Linux](https://img.shields.io/badge/Linux-green)](https://github.com/zocs/inout/releases)
 [![macOS](https://img.shields.io/badge/macOS-yellow)](https://github.com/zocs/inout/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/zocs/inout/build.yml?label=build)](https://github.com/zocs/inout/actions)
+[![F-Droid](https://img.shields.io/badge/F-Droid-pending-blue)](https://gitlab.com/fdroid/fdroiddata)
 
 [English](./README.md) · [隐私政策](./PRIVACY.md) · [📥 下载](https://github.com/zocs/inout/releases)
 
@@ -72,6 +73,8 @@
 | 🍎 **macOS** | `inout-*-macos-arm64.zip` | ⚠️ 未实测 |
 
 > 📥 [前往 Releases 下载最新版](https://github.com/zocs/inout/releases)
+>
+> 🤖 即将上线 [F-Droid](https://f-droid.org/)（审核中）
 
 ### 使用步骤
 
@@ -224,16 +227,27 @@ GitHub Actions 在 tag 推送（`v*`）时自动构建所有平台并创建 rele
 
 ```
 lib/
-├── main.dart                  # 入口 + 窗口初始化
-├── app.dart                   # MaterialApp + 主题
-├── l10n/app_localizations.dart # 三语国际化
-├── models/server_config.dart  # 配置模型 + 持久化
+├── main.dart                       # 入口 + 窗口初始化
+├── app.dart                        # MaterialApp + 主题
+├── l10n/app_localizations.dart     # 三语国际化
+├── models/
+│   ├── server_config.dart          # 配置模型 + 持久化
+│   └── transfer_log.dart           # 传输日志解析
 ├── pages/
-│   ├── home_page.dart         # 主页：目录/权限/启停/二维码
-│   ├── settings_page.dart     # 设置：主题/配色/语言
-│   └── setup_wizard_page.dart # 首次启动向导
+│   ├── home_page.dart              # 主页：目录/权限/启停/二维码
+│   ├── settings_page.dart          # 设置：主题/配色/语言
+│   ├── setup_wizard_page.dart      # 首次启动向导
+│   └── log_page.dart               # 传输日志查看
 └── services/
-    └── dufs_service.dart      # dufs 进程管理
+    ├── dufs_service.dart           # dufs 生命周期（平台分发）
+    └── dufs_ffi.dart               # FFI 绑定（桌面端）
+scripts/
+├── build_dufs.sh                   # 跨平台编译 dufs（7 平台）
+├── build_linux.sh                  # Linux 打包（AppImage/deb）
+├── build_macos.sh                  # macOS 打包
+└── dufs-ffi/lib.rs                 # Rust FFI 封装
+android/.../DufsForegroundService.kt # Android 原生 Service
+installer/inout.nsi                 # Windows NSIS 安装包
 ```
 
 ---

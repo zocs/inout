@@ -13,6 +13,7 @@
 [![Linux](https://img.shields.io/badge/Linux-green)](https://github.com/zocs/inout/releases)
 [![macOS](https://img.shields.io/badge/macOS-yellow)](https://github.com/zocs/inout/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/zocs/inout/build.yml?label=build)](https://github.com/zocs/inout/actions)
+[![F-Droid](https://img.shields.io/badge/F-Droid-pending-blue)](https://gitlab.com/fdroid/fdroiddata)
 
 [中文文档](./README_zh.md) · [Privacy Policy](./PRIVACY.md) · [📥 Releases](https://github.com/zocs/inout/releases)
 
@@ -71,6 +72,8 @@ A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). 
 | 🍎 **macOS** | `inout-*-macos-arm64.zip` | ⚠️ Untested |
 
 > 📥 [Download latest release](https://github.com/zocs/inout/releases)
+>
+> 🤖 Also available on [F-Droid](https://f-droid.org/) (pending review)
 
 ### Steps
 
@@ -223,16 +226,27 @@ GitHub Actions builds all platforms on tag push (`v*`) and creates a release aut
 
 ```
 lib/
-├── main.dart                  # Entry + window init
-├── app.dart                   # MaterialApp + theming
-├── l10n/app_localizations.dart # i18n (zh/en/zhTW)
-├── models/server_config.dart  # Config model + persistence
+├── main.dart                       # Entry + window init
+├── app.dart                        # MaterialApp + theming
+├── l10n/app_localizations.dart     # i18n (zh/en/zhTW)
+├── models/
+│   ├── server_config.dart          # Config model + persistence
+│   └── transfer_log.dart           # Transfer log parser
 ├── pages/
-│   ├── home_page.dart         # Home: dir / perms / start / QR
-│   ├── settings_page.dart     # Settings: theme / color / language
-│   └── setup_wizard_page.dart # First-run wizard
+│   ├── home_page.dart              # Home: dir / perms / start / QR
+│   ├── settings_page.dart          # Settings: theme / color / language
+│   ├── setup_wizard_page.dart      # First-run wizard
+│   └── log_page.dart               # Transfer log viewer
 └── services/
-    └── dufs_service.dart      # dufs process management
+    ├── dufs_service.dart           # dufs lifecycle (platform dispatch)
+    └── dufs_ffi.dart               # FFI bindings (desktop)
+scripts/
+├── build_dufs.sh                   # Cross-compile dufs (7 platforms)
+├── build_linux.sh                  # Linux packaging (AppImage/deb)
+├── build_macos.sh                  # macOS packaging
+└── dufs-ffi/lib.rs                 # Rust FFI wrapper
+android/app/src/main/kotlin/.../DufsForegroundService.kt  # Android native service
+installer/inout.nsi                 # Windows NSIS installer
 ```
 
 ---
