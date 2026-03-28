@@ -1,8 +1,8 @@
 <div align="center">
 
-# <img src="fastlane/metadata/android/en-US/icon.png" width="40"> inout
+# <img src="fastlane/metadata/android/en-US/icon.png" width="32"> inout
 
-**In and out, that's all.** — 轻点一下，文件分享即刻在线。
+**Files in and out, that's all.** — 轻点一下，文件分享即刻在线。
 
 [![Release](https://img.shields.io/github/v/release/zocs/inout)](https://github.com/zocs/inout/releases)
 [![License](https://img.shields.io/github/license/zocs/inout)](LICENSE)
