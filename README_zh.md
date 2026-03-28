@@ -11,7 +11,7 @@
 [![Windows](https://img.shields.io/badge/Windows-green)](https://github.com/zocs/inout/releases)
 [![Android](https://img.shields.io/badge/Android-green)](https://github.com/zocs/inout/releases)
 [![Linux](https://img.shields.io/badge/Linux-green)](https://github.com/zocs/inout/releases)
-[![macOS](https://img.shields.io/badge/macOS-green)](https://github.com/zocs/inout/releases)
+[![macOS](https://img.shields.io/badge/macOS-yellow)](https://github.com/zocs/inout/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/zocs/inout/build.yml?label=build)](https://github.com/zocs/inout/actions)
 
 [English](./README.md) · [隐私政策](./PRIVACY.md) · [📥 下载](https://github.com/zocs/inout/releases)
