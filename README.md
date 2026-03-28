@@ -8,7 +8,10 @@
 [![License](https://img.shields.io/github/license/zocs/inout)](LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/zocs/inout/total)](https://github.com/zocs/inout/releases)
 [![Flutter](https://img.shields.io/badge/Flutter-3.41+-blue)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/Platform-Windows%7CAndroid%7CLinux%7CmacOS-lightgrey)](https://github.com/zocs/inout/releases)
+[![Windows](https://img.shields.io/badge/Windows-green)](https://github.com/zocs/inout/releases)
+[![Android](https://img.shields.io/badge/Android-green)](https://github.com/zocs/inout/releases)
+[![Linux](https://img.shields.io/badge/Linux-green)](https://github.com/zocs/inout/releases)
+[![macOS](https://img.shields.io/badge/macOS-green)](https://github.com/zocs/inout/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/zocs/inout/build.yml?label=build)](https://github.com/zocs/inout/actions)
 
 [中文文档](./README_zh.md) · [Privacy Policy](./PRIVACY.md) · [📥 Releases](https://github.com/zocs/inout/releases)
@@ -23,10 +26,13 @@ A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). 
 
 ## 📱 Screenshots
 
-| | | |
-|:---:|:---:|:---:|
-| ![Home](fastlane/metadata/android/en-US/phoneScreenshots/1_inout.jpg) | ![Transfer](fastlane/metadata/android/en-US/phoneScreenshots/2_inout.jpg) | ![QR Code](fastlane/metadata/android/en-US/phoneScreenshots/3_inout.jpg) |
-| ![Settings](fastlane/metadata/android/en-US/phoneScreenshots/4_inout.jpg) | ![Logs](fastlane/metadata/android/en-US/phoneScreenshots/5_inout.jpg) | |
+<div style="overflow-x: auto; white-space: nowrap;">
+  <img src="fastlane/metadata/android/en-US/phoneScreenshots/1_inout.jpg" width="200" />
+  <img src="fastlane/metadata/android/en-US/phoneScreenshots/2_inout.jpg" width="200" />
+  <img src="fastlane/metadata/android/en-US/phoneScreenshots/3_inout.jpg" width="200" />
+  <img src="fastlane/metadata/android/en-US/phoneScreenshots/4_inout.jpg" width="200" />
+  <img src="fastlane/metadata/android/en-US/phoneScreenshots/5_inout.jpg" width="200" />
+</div>
 
 ---
 
