@@ -252,6 +252,12 @@ installer/inout.nsi                 # Windows NSIS 安装包
 
 ---
 
+## 🙏 致谢
+
+inout 基于 [dufs](https://github.com/sigoden/dufs) 构建——[sigoden](https://github.com/sigoden) 开发的出色文件服务器。没有 dufs，就没有 inout。感谢让文件分享变得如此简单。
+
+---
+
 ## 📄 许可证
 
 [MIT](LICENSE) © 2026 [zocs](https://github.com/zocs)

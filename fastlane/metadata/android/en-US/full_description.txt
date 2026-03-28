@@ -1,6 +1,6 @@
-inout lets you share files from your device to any browser on your local network — no internet, no accounts, no cloud.
+inout is a simple, no-configuration file sharing tool. Install it on ONE device, tap start, and anyone on the same network can upload and download files instantly via browser — no app needed on the other side.
 
-Just pick a folder, tap start, and anyone on the same Wi-Fi can access your files instantly.
+Just pick a folder, tap start, and share.
 
 Features:
 • One-tap file sharing via HTTP

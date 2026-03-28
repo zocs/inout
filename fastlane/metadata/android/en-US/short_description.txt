@@ -1,1 +1,1 @@
-Simple local file sharing via browser
+One-tap file sharing via browser — one install, everyone uploads & downloads

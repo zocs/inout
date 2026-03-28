@@ -251,6 +251,12 @@ installer/inout.nsi                 # Windows NSIS installer
 
 ---
 
+## 🙏 Acknowledgments
+
+inout is built on top of [dufs](https://github.com/sigoden/dufs) — a brilliant utility file server by [sigoden](https://github.com/sigoden). Without dufs, inout wouldn't exist. Thanks for making file sharing so simple.
+
+---
+
 ## 📄 License
 
 [MIT](LICENSE) © 2026 [zocs](https://github.com/zocs)
