@@ -169,7 +169,7 @@ A: LAN by default. For remote access, use ZeroTier / Tailscale / EasyTier.
 A: Not yet. Planned for a future release.
 
 **Q: Max file size?**
-A: Depends on dufs and browser. Keep individual files under 2GB for best results.
+A: No hard limit. Tested with a single 70GB+ archive over gigabit LAN — sustained full bandwidth throughout. Large downloads may have a brief delay while loading file info, which is normal. Actual speed depends on filesystem, disk I/O, and Wi-Fi throughput.
 
 **Q: How many devices can connect at once?**
 A: No hard limit — depends on bandwidth and device performance.
