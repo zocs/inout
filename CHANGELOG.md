@@ -1,102 +1,166 @@
-# Changelog
+# Changelog / 更新日志
 
-## v0.2.6 (2026-03-27)
+> 所有版本均可在 [GitHub Releases](https://github.com/zocs/inout/releases) 下载。
+> All versions available at [GitHub Releases](https://github.com/zocs/inout/releases).
 
-### 🔧 Refactor: dufs FFI Architecture
+## [v0.2.8](https://github.com/zocs/inout/releases/tag/v0.2.8) (2026-03-28)
 
-dufs is now compiled as a shared library (.so/.dll/.dylib) and loaded via Dart FFI instead of running as a child process. This eliminates orphan processes, avoids antivirus false positives, and fixes the AppImage network isolation issue caused by FUSE sandboxing.
+**中文：**
+- ✨ Android 正式签名发布，CI 构建统一使用 release keystore，覆盖安装不再需要先卸载旧版
+- ✨ F-Droid 上架材料已提交审核（Fastlane metadata、GitLab MR）
+- 🐛 修复多平台版本号不一致的问题（安装包文件名和 app 内显示版本对不上）
+- 🏗️ CI 全平台版本号统一从 pubspec.yaml 读取
 
-dufs 现在编译为共享库（.so/.dll/.dylib），通过 Dart FFI 加载，不再作为子进程运行。消除了孤儿进程问题，规避杀毒软件误报，并修复了 AppImage 因 FUSE 沙箱导致的网络隔离问题。
-
-### ✨ Features (since v0.2.3)
-
-- **Transfer log** — track file downloads/uploads with a real-time log viewer
-- **传输记录** — 实时查看文件下载/上传记录
-- **Source-compiled dufs** — all platforms build dufs from source, F-Droid compatible
-- **源码编译 dufs** — 全平台从源码编译，兼容 F-Droid
-- **Android Native Service** — dufs runs in a native Android Service, survives Activity destruction (fixes low-memory devices like Mi 6)
-- **Android 原生服务** — dufs 在原生 Android Service 中运行，Activity 被回收后服务不中断（修复小米 6 等低内存设备）
-- **Back key confirmation** — pressing back while server is running prompts to stop before exiting
-- **返回键确认** — 服务运行中按返回键会弹窗询问是否停止服务再退出
-- **Multi-address display** — shows all available network interfaces with names
-- **多地址显示** — 显示所有可用网络接口地址及网卡名称
-
-### 🐛 Fixes
-
-- **Windows antivirus** — dufs binary no longer triggers Windows Defender / antivirus false positives (now a .dll loaded via FFI)
-- **Windows 杀毒软件** — dufs 不再触发 Windows Defender / 杀毒软件误报（改为 .dll 通过 FFI 加载）
-- **AppImage network** — fixed dufs server unreachable inside AppImage due to FUSE sandbox isolation
-- **AppImage 网络** — 修复 AppImage 内 dufs 服务因 FUSE 沙箱隔离导致无法访问
-- **Linux packaging** — fixed CMAKE_INSTALL_PREFIX permission error on some distros
-- **Linux 打包** — 修复部分发行版上 CMAKE_INSTALL_PREFIX 权限错误
-- **Android API level** — target API 24 for freeifaddrs compatibility
-- **Android API 级别** — 目标 API 24 以兼容 freeifaddrs
-
-### 🏗️ Build
-
-- **CI: compile dufs from source** — all platforms (Android/Windows/Linux/macOS/iOS) build dufs from the zocs/dufs fork
-- **CI: 源码编译 dufs** — 全平台从 zocs/dufs fork 编译
-- **CI: AAB for Play Store** — added Android App Bundle build for Google Play
-- **CI: Play Store AAB** — 新增 Android App Bundle 构建用于 Google Play 发布
+**English：**
+- ✨ Android release signing — CI builds use a unified release keystore, no need to uninstall before updating
+- ✨ F-Droid submission prepared (Fastlane metadata, GitLab MR)
+- 🐛 Fixed version number inconsistency across platforms (package filename vs in-app display)
+- 🏗️ CI reads version from pubspec.yaml across all platforms
 
 ---
 
-## v0.2.3 (2026-03-25)
+## [v0.2.7](https://github.com/zocs/inout/releases/tag/v0.2.7) (2026-03-27)
 
-### ✨ Features
+**中文：**
+- 🐛 修复 Windows NSIS 安装包路径含空格时引号处理错误
+- 🐛 修复 Android FFI 重复调用导致的并发崩溃
+- 🐛 修复 F-Droid 构建版本号检测
+- 🐛 修复版本号同步问题
 
-- **Android Native Service** — dufs process managed by native Kotlin Service
-- **Transfer log** — file transfer history with dufs --log-file polling
-- **Back key exit** — double-tap or confirm-stop dialog
-- **Address list** — show all network interfaces
-
-### 🐛 Fixes
-
-- Fixed dufs process orphaning on low-memory Android devices
-- Fixed port conflict detection
-
----
-
-## v0.2.2 (2026-03-20)
-
-### 🐛 Fixes
-
-- **Linux AppImage** — fixed dufs binary not found in AppImage (FUSE path issue)
-- **CI encoding** — fixed UTF-8 BOM in Windows CI builds
+**English：**
+- 🐛 Fixed NSIS installer quoting error when path contains spaces
+- 🐛 Fixed Android FFI concurrent crash from re-entry
+- 🐛 Fixed F-Droid build version detection
+- 🐛 Fixed version number sync issues
 
 ---
 
-## v0.2.1 (2026-03-18)
+## [v0.2.6](https://github.com/zocs/inout/releases/tag/v0.2.6) (2026-03-27)
 
-### ✨ Features
+### 🔧 架构重构 / Refactor: dufs FFI
 
-- **New icon** — hand-drawn pencil sketch style icon for all platforms + system tray
+**中文：**
+
+dufs 文件服务从"作为子进程运行"改为"编译成共享库通过 FFI 加载"。解决了三个实际问题：Windows 杀毒软件误报、Linux AppImage 网络隔离、以及子进程残留。
+
+**English：**
+
+dufs is now compiled as a shared library (.so/.dll/.dylib) and loaded via Dart FFI instead of running as a child process. This fixes antivirus false positives on Windows, network isolation in AppImage (FUSE sandbox), and orphaned processes.
+
+### ✨ 新功能 / Features (since v0.2.3)
+
+**中文：**
+- **传输记录** — 实时查看文件下载/上传日志
+- **源码编译 dufs** — 全平台从源码编译，兼容 F-Droid 要求
+- **Android 原生 Service** — dufs 跑在原生 Android Service 里，Activity 被回收后服务不中断（小米 6 等 4GB 内存设备实测修复）
+- **返回键确认** — 服务运行中按返回键会弹窗确认，避免误关
+- **多地址显示** — 列出所有网卡的 IP 地址和网卡名称
+
+**English：**
+- **Transfer log** — real-time download/upload history viewer
+- **Source-compiled dufs** — all platforms build from source, F-Droid compatible
+- **Android Native Service** — dufs runs in a native Service, survives Activity destruction (fixes low-memory devices like Mi 6)
+- **Back key confirmation** — prompts before exiting while server is running
+- **Multi-address display** — shows all network interfaces with names
+
+### 🐛 修复 / Fixes
+
+**中文：**
+- Windows 杀毒软件不再误报（dufs 从 .exe 改为 .dll）
+- AppImage 内文件服务无法访问的问题
+- 部分 Linux 发行版打包时的权限报错
+- Android API 级别调整以兼容旧设备
+
+**English：**
+- Windows antivirus no longer flags dufs (changed from .exe to .dll)
+- Fixed dufs unreachable inside AppImage
+- Fixed CMAKE_INSTALL_PREFIX permission error on some distros
+- Adjusted Android target API for older device compatibility
 
 ---
 
-## v0.2.0 (2026-03-15)
+## [v0.2.3](https://github.com/zocs/inout/releases/tag/v0.2.3) (2026-03-25)
 
-### ✨ Features
+**中文：**
+- ✨ Android 文件服务改用原生 Kotlin Service 管理，低内存设备不再假死
+- ✨ 新增传输记录功能，查看文件传输历史
+- ✨ 返回键双重确认：服务运行中按返回会弹窗询问
+- ✨ 地址列表始终显示所有网卡地址
+- 🐛 修复低内存设备上 dufs 进程丢失的问题
+- 🐛 修复端口冲突检测
 
-- **Desktop drag & drop** — drag files/folders onto the window to set share path
-- **System tray** — minimize to tray, right-click menu
-- **Close behavior** — choose minimize-to-tray or exit on close
-- **Multi-address** — show all network interface IPs
-- **Android 8 fix** — storage permission for older devices
-- **Animated splash** — pixel-art "inout" splash with smooth Flutter transition
-- **Orphan cleanup** — detect and kill orphaned dufs processes on startup
+**English：**
+- ✨ Android dufs process now managed by native Kotlin Service, fixes low-memory device crashes
+- ✨ Transfer log — view file transfer history
+- ✨ Back key confirmation when server is running
+- ✨ Address list always shows all network interfaces
+- 🐛 Fixed dufs process orphaning on low-memory devices
+- 🐛 Fixed port conflict detection
 
 ---
 
-## v0.1.0 (2026-03-01)
+## [v0.2.2](https://github.com/zocs/inout/releases/tag/v0.2.2) (2026-03-20)
 
-### 🎉 Initial Release
+**中文：**
+- 🐛 修复 Linux AppImage 内找不到 dufs 的问题
+- 🐛 修复 Windows CI 构建的编码问题
 
+**English：**
+- 🐛 Fixed dufs binary not found in Linux AppImage
+- 🐛 Fixed UTF-8 encoding issue in Windows CI builds
+
+---
+
+## [v0.2.1](https://github.com/zocs/inout/releases/tag/v0.2.1) (2026-03-18)
+
+**中文：**
+- ✨ 全新铅笔手绘风格图标（应用图标 + 系统托盘图标）
+
+**English：**
+- ✨ New hand-drawn pencil sketch icon (app + system tray)
+
+---
+
+## [v0.2.0](https://github.com/zocs/inout/releases/tag/v0.2.0) (2026-03-15)
+
+**中文：**
+- ✨ 桌面端拖放共享——直接拖文件/文件夹到窗口设置共享目录
+- ✨ 系统托盘——最小化到托盘，右键菜单操作
+- ✨ 关闭行为可选——最小化到托盘还是直接退出
+- ✨ 多网卡地址列表——显示所有网络接口 IP
+- ✨ 修复 Android 8 存储权限问题
+- ✨ 启动动画——像素风 inout + 原生到 Flutter 无缝过渡
+- ✨ 启动时自动清理残留的 dufs 孤儿进程
+
+**English：**
+- ✨ Desktop drag & drop — drag files/folders to set share path
+- ✨ System tray — minimize to tray with right-click menu
+- ✨ Close behavior choice — minimize to tray or exit
+- ✨ Multi-address list — shows all network interface IPs
+- ✨ Fixed Android 8 storage permission
+- ✨ Animated splash — pixel-art inout with smooth Flutter transition
+- ✨ Auto-cleanup of orphaned dufs processes on startup
+
+---
+
+## [v0.1.0](https://github.com/zocs/inout/releases/tag/v0.1.0) (2026-03-01)
+
+🎉 首个版本 / Initial Release
+
+**中文：**
+- 文件夹和单文件分享
+- 权限预设（只读 / 可上传 / 完整控制）
+- 密码认证、CORS 开关
+- 二维码生成
+- 三语支持（简中 / 繁中 / English）
+- Material 3 主题 + 6 种配色
+- Android + Windows + Linux 安装包
+
+**English：**
 - Directory & single-file sharing
 - Permission presets (readonly / upload / full)
-- Auth support (dufs format)
-- CORS toggle
+- Password auth, CORS toggle
 - QR code generation
-- Multi-language (简中/繁中/English)
+- Multilingual (Simplified Chinese / Traditional Chinese / English)
 - Material 3 theming with 6 color schemes
 - Android + Windows + Linux packages

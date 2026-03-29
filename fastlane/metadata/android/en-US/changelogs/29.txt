@@ -1,0 +1,3 @@
+- F-Droid compatibility: disable dependency metadata in APK signing block
+- Build script: dynamic NDK clang detection
+- Fix version format for automated updates

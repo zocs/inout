@@ -1,6 +1,6 @@
 Categories:
-  - Internet
-  - Files
+  - File Transfer
+
 License: MIT
 AuthorName: zocs
 WebSite: https://github.com/zocs/inout
@@ -8,14 +8,14 @@ SourceCode: https://github.com/zocs/inout
 IssueTracker: https://github.com/zocs/inout/issues
 Changelog: https://github.com/zocs/inout/releases
 
-Name: inout
 AutoName: inout
-Summary: Simple graphical file sharing tool
+Summary: One-tap file sharing via browser - one install, everyone uploads & downloads
 Description: |-
   inout is a graphical file sharing application that lets you share files
   from your device to any browser on your local network.
 
   Features:
+
   * One-tap file sharing via HTTP
   * Upload files from any browser
   * QR code for easy access
@@ -30,36 +30,32 @@ Repo: https://github.com/zocs/inout
 Builds:
   - versionName: 0.2.8
     versionCode: 28
-    commit: v0.2.8
-    subdir: android
+    commit: 3be86d42f5056e87b04b218ab768b7a3c4767619
     sudo:
       - apt-get update
-      - apt-get install -y protobuf-compiler
-    init:
-      - cd ..
-      - git clone --depth 1 --branch stable https://github.com/flutter/flutter.git
-      - export PATH="$PWD/flutter/bin:$PWD/flutter/bin/cache/dart-sdk/bin:$PATH"
-      - flutter precache --android
-      - flutter config --no-analytics
+      - apt-get install -y protobuf-compiler build-essential
+    output: build/app/outputs/flutter-apk/app-release.apk
+    srclibs:
+      - flutter@3.41.5
     prebuild:
-      - export PATH="$PWD/flutter/bin:$PWD/flutter/bin/cache/dart-sdk/bin:$PATH"
-      # Install Rust
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - source $HOME/.cargo/env
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain
+        1.86.0 --no-modify-path
+      - source "$HOME/.cargo/env"
       - rustup target add aarch64-linux-android
-      # Compile dufs from source
-      - cd ..
-      - NDK=$(find "$ANDROID_HOME/ndk" -maxdepth 1 -type d | sort -V | tail -1)
-      - export ANDROID_NDK_HOME="$NDK"
+      - export ANDROID_NDK_HOME="$$NDK$$"
+      - export PUB_CACHE="$(pwd)/.pub-cache"
+      - $$flutter$$/bin/flutter config --no-analytics
+      - $$flutter$$/bin/flutter pub get
       - bash scripts/build_dufs.sh android-arm64
-      - cd android
+    scanignore:
+      - android/app/src/main/jniLibs
+      - .pub-cache
     build:
-      - export PATH="$PWD/flutter/bin:$PWD/flutter/bin/cache/dart-sdk/bin:$PATH"
-      - cd ..
-      - flutter build apk --release
+      - export PUB_CACHE="$(pwd)/.pub-cache"
+      - $$flutter$$/bin/flutter build apk --release --build-name=0.2.8 --build-number=28
+    ndk: r27
 
-AllowedAPKSigningKeys:
-  - E4DB9054FF7070E4BEE3387E928E1388FACFEC0526DA10E4510282E9D26AED6A
+AllowedAPKSigningKeys: e4db9054ff7070e4bee3387e928e1388facfec0526da10e4510282e9d26aed6a
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags

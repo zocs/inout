@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # build_dufs.sh - Compile dufs from source for a given platform
 # Usage: bash scripts/build_dufs.sh <platform>
 #   platform: android-arm64 | linux-x86_64 | linux-arm64 | windows-x86_64 | macos-arm64 | macos-x86_64 | ios-arm64
@@ -68,7 +68,13 @@ case "$PLATFORM" in
       Darwin*) HOST_TAG="darwin-x86_64" ;;
       *)       echo "Unsupported host"; exit 1 ;;
     esac
-    LINKER="${TOOLCHAIN}/${HOST_TAG}/bin/aarch64-linux-android24-clang"
+    # Find the highest available API level clang for aarch64
+    LINKER=$(find "${TOOLCHAIN}/${HOST_TAG}/bin" -name "aarch64-linux-android*-clang" 2>/dev/null | sort -V | tail -1)
+    if [ -z "$LINKER" ]; then
+      echo "ERROR: No aarch64-linux-android clang found in ${TOOLCHAIN}/${HOST_TAG}/bin"
+      ls "${TOOLCHAIN}/${HOST_TAG}/bin/" 2>/dev/null || true
+      exit 1
+    fi
 
     mkdir -p .cargo
     cat > .cargo/config.toml << EOF
