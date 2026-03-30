@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ARCH=${1:-x86_64}
-VERSION=$(grep 'version:' pubspec.yaml | head -1 | awk '{print $2}' | tr -d '+')
+VERSION=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}' | awk -F'+' '{print $1}')
 APP_NAME="inout"
 
 # Architecture mapping
