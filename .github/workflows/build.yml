@@ -210,19 +210,19 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body: |
-            馃 **Automated build & release by GitHub Actions** | **姝ょ増鏈敱 GitHub Actions 鑷姩鍖栨瀯寤哄苟鍙戝竷**
+            🤖 **Automated build & release by GitHub Actions** | **此版本由 GitHub Actions 自动化构建并发布**
 
-            > All native binaries (dufs) are compiled from source 鈥?F-Droid compatible.
+            > All native binaries (dufs) are compiled from source — F-Droid compatible.
 
             | Platform | Files | Status |
             |----------|-------|--------|
-            | Android | `.apk` | 鉁?|
-            | Windows x64 | `.zip` (portable) + `.exe` (installer) | 鉁?|
-            | macOS ARM64 | `.zip` (app bundle) | 鈿狅笍 鏈鏈鍚嶏紝鏈疄鏈烘祴璇?|
-            | Linux x64 | `.AppImage` + `.deb` + `.tar.gz` | 鉁?|
-            | Linux ARM64 | `.AppImage` + `.deb` + `.tar.gz` | 鉁?|
+            | Android | `.apk` | ✅ |
+            | Windows x64 | `.zip` (portable) + `.exe` (installer) | ✅ |
+            | macOS ARM64 | `.zip` (app bundle) | ⚠️ 未签名，未实机测试 |
+            | Linux x64 | `.AppImage` + `.deb` + `.tar.gz` | ✅ |
+            | Linux ARM64 | `.AppImage` + `.deb` + `.tar.gz` | ✅ |
 
-            > 馃崕 iOS/macOS 鏈鍚嶏細`xattr -cr inout.app`
+            > 🍎 macOS 未签名：`xattr -cr inout.app`
           files: |
             artifacts/**/*.AppImage
             artifacts/**/*.deb
