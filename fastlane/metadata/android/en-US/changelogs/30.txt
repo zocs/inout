@@ -1,0 +1,3 @@
+- Hide system files: auto-hide .git, .DS_Store, Thumbs.db, .env etc. (on by default)
+- Render index: auto-render index.html if present in directory for quick web testing
+- Fixed Linux/macOS build script version extraction bug

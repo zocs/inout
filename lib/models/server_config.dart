@@ -52,6 +52,12 @@ class ServerConfig {
   /// 是否在分享单文件模式（dufs 指定单文件）
   bool shareSingleFile;
 
+  /// 隐藏系统文件（.git, .DS_Store, Thumbs.db 等）
+  bool hideSystemFiles;
+
+  /// 目录有 index.html 时自动渲染
+  bool renderTryIndex;
+
   ServerConfig({
     this.path = '',
     this.port = 5000,
@@ -69,6 +75,8 @@ class ServerConfig {
     this.setupDone = false,
     this.closeAction = 'ask',
     this.shareSingleFile = false,
+    this.hideSystemFiles = true,
+    this.renderTryIndex = false,
   });
 
   /// 转为 JSON Map
@@ -89,6 +97,8 @@ class ServerConfig {
         'setupDone': setupDone,
         'closeAction': closeAction,
         'shareSingleFile': shareSingleFile,
+        'hideSystemFiles': hideSystemFiles,
+        'renderTryIndex': renderTryIndex,
       };
 
   /// 从 JSON Map 创建实例
@@ -109,6 +119,8 @@ class ServerConfig {
         setupDone: json['setupDone'] as bool? ?? false,
         closeAction: json['closeAction'] as String? ?? 'ask',
         shareSingleFile: json['shareSingleFile'] as bool? ?? false,
+        hideSystemFiles: json['hideSystemFiles'] as bool? ?? true,
+        renderTryIndex: json['renderTryIndex'] as bool? ?? false,
       );
 
   /// 从 SharedPreferences 加载配置

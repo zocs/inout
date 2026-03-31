@@ -678,6 +678,20 @@ class _HomePageState extends State<HomePage> with WindowListener, WidgetsBinding
         value: _config.cors,
         onChanged: (v) async { setState(() => _config.cors = v); await _saveConfig(); },
       ),
+      // Hide system files
+      SwitchListTile(
+        title: Text(l10n.t('home.hideSystemFiles')),
+        subtitle: Text(l10n.t('home.hideSystemFilesHint'), style: Theme.of(context).textTheme.bodySmall),
+        value: _config.hideSystemFiles,
+        onChanged: (v) async { setState(() => _config.hideSystemFiles = v); await _saveConfig(); },
+      ),
+      // Render try index
+      SwitchListTile(
+        title: Text(l10n.t('home.renderTryIndex')),
+        subtitle: Text(l10n.t('home.renderTryIndexHint'), style: Theme.of(context).textTheme.bodySmall),
+        value: _config.renderTryIndex,
+        onChanged: (v) async { setState(() => _config.renderTryIndex = v); await _saveConfig(); },
+      ),
       const SizedBox(height: 8),
     ]),
     );

@@ -262,6 +262,8 @@ class DufsService extends ChangeNotifier {
     }
     if (c.auth != null && c.auth!.isNotEmpty) args.addAll(['--auth', '${c.auth!}@/:rw']);
     if (c.cors) args.add('--enable-cors');
+    if (c.hideSystemFiles) args.addAll(['--hidden', '.git,.DS_Store,Thumbs.db,.env,.idea,.vscode,__pycache__,.svn,.hg']);
+    if (c.renderTryIndex) args.add('--render-try-index');
     // Write HTTP logs to a temp file so we can read them on all platforms
     if (_logFilePath != null) args.addAll(['--log-file', _logFilePath!]);
     // dufs 只能服务目录，单文件模式传父目录

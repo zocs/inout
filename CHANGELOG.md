@@ -3,6 +3,22 @@
 > 所有版本均可在 [GitHub Releases](https://github.com/zocs/inout/releases) 下载。
 > All versions available at [GitHub Releases](https://github.com/zocs/inout/releases).
 
+## [v0.3.0](https://github.com/zocs/inout/releases/tag/v0.3.0) (2026-03-31)
+
+**中文：**
+- ✨ 隐藏系统文件：自动隐藏 .git、.DS_Store、Thumbs.db、.env 等系统文件（默认开启）
+- ✨ 渲染首页：目录有 index.html 时自动渲染，方便简易测试网页
+- 🐛 修复 Linux/macOS 构建脚本版本号提取错误（0.2.929 → 0.2.9）
+- 🏗️ CI 排除 iOS 从 release 发布（仅编译测试）
+
+**English：**
+- ✨ Hide system files: auto-hide .git, .DS_Store, Thumbs.db, .env etc. (on by default)
+- ✨ Render index: auto-render index.html if present in directory for quick web testing
+- 🐛 Fixed Linux/macOS build script version extraction bug (0.2.929 → 0.2.9)
+- 🏗️ CI excludes iOS from release (compile-only)
+
+---
+
 ## [v0.2.8](https://github.com/zocs/inout/releases/tag/v0.2.8) (2026-03-28)
 
 **中文：**
