@@ -68,11 +68,18 @@ case "$PLATFORM" in
       Darwin*) HOST_TAG="darwin-x86_64" ;;
       *)       echo "Unsupported host"; exit 1 ;;
     esac
-    # Find the highest available API level clang for aarch64
-    LINKER=$(find "${TOOLCHAIN}/${HOST_TAG}/bin" -name "aarch64-linux-android*-clang" 2>/dev/null | sort -V | tail -1)
-    if [ -z "$LINKER" ]; then
-      echo "ERROR: No aarch64-linux-android clang found in ${TOOLCHAIN}/${HOST_TAG}/bin"
-      ls "${TOOLCHAIN}/${HOST_TAG}/bin/" 2>/dev/null || true
+    # IMPORTANT: link against a low API level (matches AndroidManifest minSdk=24).
+    # If we let `sort -V | tail -1` pick the highest clang wrapper (e.g. API 35 in
+    # NDK r27), lld emits DT_RELR packed relocations — the Android dynamic linker
+    # only understands those from API 30+. On older devices (tested API 26) the
+    # linker logs "unused DT entry: type 0x6fffe000/01/03" then the binary
+    # segfaults at SEGV_MAPERR on its first PLT call. Pinning to API 24 keeps lld
+    # on the legacy relocation format that works everywhere from minSdk up.
+    ANDROID_API="${ANDROID_API:-24}"
+    LINKER="${TOOLCHAIN}/${HOST_TAG}/bin/aarch64-linux-android${ANDROID_API}-clang"
+    if [ ! -x "$LINKER" ]; then
+      echo "ERROR: Missing ${LINKER}. Available aarch64 clang wrappers:"
+      ls "${TOOLCHAIN}/${HOST_TAG}/bin/" 2>/dev/null | grep 'aarch64-linux-android.*-clang$' | head -20
       exit 1
     fi
 
@@ -80,6 +87,9 @@ case "$PLATFORM" in
     cat > .cargo/config.toml << EOF
 [target.aarch64-linux-android]
 linker = "${LINKER}"
+# Belt-and-suspenders: forbid DT_RELR packed relocations even if a future lld
+# default changes. --pack-dyn-relocs=none ≥ API 23 compatible unconditionally.
+rustflags = ["-C", "link-arg=-Wl,--pack-dyn-relocs=none"]
 EOF
 
     export CC="${LINKER}"
