@@ -52,7 +52,7 @@ Builds:
       - .pub-cache
     build:
       - export PUB_CACHE="$(pwd)/.pub-cache"
-      - $$flutter$$/bin/flutter build apk --release --build-name=0.2.8 --build-number=28
+      - $$flutter$$/bin/flutter build apk --release --build-name=0.3.0 --build-number=30
     ndk: r27
 
 AllowedAPKSigningKeys: e4db9054ff7070e4bee3387e928e1388facfec0526da10e4510282e9d26aed6a

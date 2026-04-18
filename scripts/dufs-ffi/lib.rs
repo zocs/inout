@@ -42,21 +42,27 @@ static RUNNING: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 static RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
 static SHUTDOWN_TX: Mutex<Option<broadcast::Sender<()>>> = Mutex::new(None);
 
-/// Start the dufs server with CLI-style args string (e.g. "-b 0.0.0.0 -p 5000 /path").
+/// Start the dufs server with a proper argv array (argc + *argv[]).
+/// Each element must be a NUL-terminated UTF-8 string.
 /// Returns 0 on success, -1 on error.
 #[no_mangle]
-pub extern "C" fn dufs_start(args_ptr: *const c_char) -> i32 {
-    let args_str = unsafe {
-        if args_ptr.is_null() {
+pub extern "C" fn dufs_start(argc: i32, argv: *const *const c_char) -> i32 {
+    if argv.is_null() || argc < 0 {
+        return -1;
+    }
+    let mut args: Vec<String> = Vec::with_capacity(argc as usize);
+    for i in 0..argc as usize {
+        let p = unsafe { *argv.add(i) };
+        if p.is_null() {
             return -1;
         }
-        match CStr::from_ptr(args_ptr).to_str() {
-            Ok(s) => s.to_owned(),
+        match unsafe { CStr::from_ptr(p) }.to_str() {
+            Ok(s) => args.push(s.to_owned()),
             Err(_) => return -1,
         }
-    };
+    }
 
-    match start_inner(&args_str) {
+    match start_inner(args) {
         Ok(_) => 0,
         Err(e) => {
             eprintln!("[dufs-ffi] Failed to start: {e}");
@@ -105,7 +111,7 @@ pub extern "C" fn dufs_is_running() -> i32 {
     0
 }
 
-fn start_inner(args_str: &str) -> Result<()> {
+fn start_inner(caller_args: Vec<String>) -> Result<()> {
     // Prevent double-start: if a server is already running, stop it first
     {
         let running_guard = RUNNING.lock().map_err(|_| anyhow!("RUNNING lock poisoned"))?;
@@ -117,9 +123,9 @@ fn start_inner(args_str: &str) -> Result<()> {
         }
     }
 
-    // Build argv from args string
+    // Prepend argv[0] = "dufs" for clap
     let argv: Vec<String> = std::iter::once("dufs".to_owned())
-        .chain(args_str.split_whitespace().map(|s| s.to_owned()))
+        .chain(caller_args.into_iter())
         .collect();
 
     let cmd = build_cli();

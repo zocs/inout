@@ -5,12 +5,12 @@ import 'dart:io';
 import 'package:ffi/ffi.dart';
 
 // C function signatures
-typedef DufsStartNative = Int32 Function(Pointer<Utf8> args);
+typedef DufsStartNative = Int32 Function(Int32 argc, Pointer<Pointer<Utf8>> argv);
 typedef DufsStopNative = Void Function();
 typedef DufsIsRunningNative = Int32 Function();
 
 // Dart function signatures
-typedef DufsStart = int Function(Pointer<Utf8> args);
+typedef DufsStart = int Function(int argc, Pointer<Pointer<Utf8>> argv);
 typedef DufsStop = void Function();
 typedef DufsIsRunning = int Function();
 
@@ -28,15 +28,27 @@ class DufsFfi {
     _isRunning = _lib!.lookupFunction<DufsIsRunningNative, DufsIsRunning>('dufs_is_running');
   }
 
-  /// Start the dufs server with CLI-style args.
+  /// Start the dufs server with an argv array. Each element is passed verbatim —
+  /// no shell splitting — so paths, passwords, and flag values are safe even
+  /// when they contain spaces, '@', or '-' prefixes.
   /// Returns 0 on success, -1 on error.
-  int start(String args) {
+  int start(List<String> args) {
     if (_start == null) throw StateError('DufsFfi not loaded');
-    final ptr = args.toNativeUtf8();
+    final argc = args.length;
+    final argv = calloc<Pointer<Utf8>>(argc);
+    final owned = <Pointer<Utf8>>[];
     try {
-      return _start!(ptr);
+      for (var i = 0; i < argc; i++) {
+        final p = args[i].toNativeUtf8();
+        owned.add(p);
+        argv[i] = p;
+      }
+      return _start!(argc, argv);
     } finally {
-      malloc.free(ptr);
+      for (final p in owned) {
+        malloc.free(p);
+      }
+      calloc.free(argv);
     }
   }
 

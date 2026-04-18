@@ -290,9 +290,8 @@ class DufsService extends ChangeNotifier {
       _dufsFfi.load(libPath);
     }
     final args = _buildArgs(config);
-    final argsStr = args.join(' ');
-    _log('dufs ffi start: $argsStr');
-    final ret = _dufsFfi.start(argsStr);
+    _log('dufs ffi start: ${args.join(' ')}');
+    final ret = _dufsFfi.start(args);
     if (ret != 0) {
       _log('dufs FFI start returned $ret (failure)');
       throw Exception('dufs FFI start returned $ret');
@@ -326,22 +325,19 @@ class DufsService extends ChangeNotifier {
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
-  /// 解析 dufs 输出行，更新请求计数和日志列表
+  /// 解析 dufs 输出行,更新请求计数和日志列表
   void _trackActivity(String line) {
-    final isRequest = RegExp(r'[1-5]\d{2}').hasMatch(line) &&
-        (line.contains('GET') || line.contains('POST') || line.contains('PUT') || line.contains('DELETE'));
-    if (isRequest) {
-      _totalRequests++;
-      _lastActivity = DateTime.now().toIso8601String().substring(11, 19);
-      final entry = TransferLog.parse(line);
-      if (entry != null && _isFileTransfer(entry)) {
-        _transferLogs.insert(0, entry);
-        if (_transferLogs.length > 200) {
-          _transferLogs.removeRange(200, _transferLogs.length);
-        }
+    final entry = TransferLog.parse(line);
+    if (entry == null) return;
+    _totalRequests++;
+    _lastActivity = DateTime.now().toIso8601String().substring(11, 19);
+    if (_isFileTransfer(entry)) {
+      _transferLogs.insert(0, entry);
+      if (_transferLogs.length > 200) {
+        _transferLogs.removeRange(200, _transferLogs.length);
       }
-      notifyListeners();
     }
+    notifyListeners();
   }
 
   bool _isFileTransfer(TransferLog entry) {

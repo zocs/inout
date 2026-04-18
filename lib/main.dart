@@ -182,6 +182,7 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
       _themeMode = mode;
       widget.config.themeMode = mode.name;
     });
+    widget.config.save();
   }
 
   void _onColorChanged(String scheme) {
@@ -189,6 +190,7 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
       _colorScheme = scheme;
       widget.config.colorScheme = scheme;
     });
+    widget.config.save();
   }
 
   void _onSetupDone() {
