@@ -56,3 +56,7 @@ dist/
 assets/dufs/dufs-*
 android/app/src/main/jniLibs/*/libdufs.so
 ios/Frameworks/dufs
+
+# Local docs
+CODE_REVIEW.md
+PROCEED.md
