@@ -21,7 +21,7 @@
 
 ---
 
-A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). **Zero config, zero barrier** — run inout on one device, and anyone with a browser can access and transfer files. The other side needs no app.
+A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). **Zero config, zero barrier** — share a folder or a single file from one device, and anyone with a browser can access and transfer it. The other side needs no app.
 
 ---
 
@@ -38,9 +38,11 @@ A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). 
 | Feature | |
 |:---|:---:|
 | 📱 **One device is enough** | The rest use a browser |
+| 📄 **Folder or single file** | Share a full directory or just one file |
 | ⬆️⬇️ **Bidirectional** | Upload AND download, not just send |
 | 🔗 **Just open a link** | QR code or URL — that's all the other side needs |
 | 🔐 **Secure** | Optional password auth, CORS control |
+| 🔀 **Fine-grained permissions** | Upload, delete, search, archive download — toggle each one |
 | 🎨 **Customizable** | 6 color schemes + dark / light mode |
 | 🌐 **Multilingual** | 简体中文 · 繁體中文 · English |
 | 📦 **Zero setup** | Self-contained — no external dependencies |
@@ -81,6 +83,8 @@ A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). 
 2. Tap "Start Server"
 3. Scan QR code or enter URL in browser (port required)
 4. Share files — done!
+
+> Recent builds also add a smoother start/stop transition state, so slower devices feel less abrupt when the embedded file server is starting or shutting down.
 
 ---
 
@@ -161,6 +165,9 @@ xattr -d com.apple.quarantine inout.app
 
 **Q: Does the other side need inout?**
 A: No! Only one device runs inout. Others just open a browser.
+
+**Q: Can I share a single file instead of a whole folder?**
+A: Yes. Choose a single file and inout will expose just that file through the browser.
 
 **Q: Can I access it remotely?**
 A: LAN by default. For remote access, use ZeroTier / Tailscale / EasyTier.
@@ -248,6 +255,8 @@ scripts/
 android/app/src/main/kotlin/.../DufsForegroundService.kt  # Android native service
 installer/inout.nsi                 # Windows NSIS installer
 ```
+
+Desktop builds embed `dufs` through Rust FFI; Android uses a foreground native service to survive Activity recreation on lower-memory devices.
 
 ---
 
