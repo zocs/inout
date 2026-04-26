@@ -63,287 +63,426 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ========== About Header ==========
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
-          ),
-          child: Column(children: [
-            Text('INOUT', style: TextStyle(fontFamily: 'PressStart2P', fontSize: 24, color: Theme.of(context).colorScheme.primary)),
-            const SizedBox(height: 12),
-            Text('v$appVersion', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),
-            const SizedBox(height: 8),
-            Text(l10n.t('about.description'), textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5)),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () => launchUrl(Uri.parse('https://github.com/zocs/inout'), mode: LaunchMode.externalApplication),
-              child: Text('github.com/zocs/inout',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ========== About Header ==========
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'INOUT',
+                  style: TextStyle(
+                    fontFamily: 'PressStart2P',
+                    fontSize: 24,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'v$appVersion',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.t('about.description'),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.5),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => launchUrl(
+                    Uri.parse('https://github.com/zocs/inout'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  child: Text(
+                    'github.com/zocs/inout',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w500,
-                      decoration: TextDecoration.underline)),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(Icons.privacy_tip_outlined, size: 16),
+                      label: Text(
+                        l10n.t('about.privacy'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      onPressed: () => _showPrivacyPolicy(context),
+                    ),
+                    const SizedBox(width: 12),
+                    TextButton.icon(
+                      icon: const Icon(Icons.article_outlined, size: 16),
+                      label: Text(
+                        l10n.t('about.license'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      onPressed: () => showLicensePage(
+                        context: context,
+                        applicationName: 'inout',
+                        applicationVersion: 'v$appVersion',
+                        applicationLegalese:
+                            'Copyright (c) 2026 zocs\nMIT License',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              TextButton.icon(
-                icon: const Icon(Icons.privacy_tip_outlined, size: 16),
-                label: Text(l10n.t('about.privacy'), style: const TextStyle(fontSize: 12)),
-                onPressed: () => _showPrivacyPolicy(context),
-              ),
-              const SizedBox(width: 12),
-              TextButton.icon(
-                icon: const Icon(Icons.article_outlined, size: 16),
-                label: Text(l10n.t('about.license'), style: const TextStyle(fontSize: 12)),
-                onPressed: () => showLicensePage(
-                  context: context,
-                  applicationName: 'inout',
-                  applicationVersion: 'v$appVersion',
-                  applicationLegalese: 'Copyright (c) 2026 zocs\nMIT License',
-                ),
-              ),
-            ]),
-          ]),
-        ),
-
-        const Divider(height: 1),
-
-        // ========== Help ==========
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text(l10n.t('settings.help'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _helpStep(context, '1', l10n.t('help.step1')),
-              _helpStep(context, '2', l10n.t('help.step2')),
-              _helpStep(context, '3', l10n.t('help.step3')),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.info_outline, size: 16, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(l10n.t('help.tip'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
-                ]),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.pinkAccent.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.favorite, size: 16, color: Colors.pink),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(l10n.t('help.tip2'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
-                ]),
-              ),
-            ]),
           ),
-        ),
 
-        const Divider(height: 24),
-        const Divider(height: 24),
+          const Divider(height: 1),
 
-        // ========== Storage Permission (Android) ==========
-        if (Theme.of(context).platform == TargetPlatform.android) ...[
+          // ========== Help ==========
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-            child: Text(l10n.t('settings.permissions'),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary)),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(
+              l10n.t('settings.help'),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: (_cachedStorageGranted ?? false)
-                    ? Colors.green.withValues(alpha: 0.08)
-                    : (_cachedStorageGranted == null
-                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                        : Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3)),
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(children: [
-                Icon(
-                  (_cachedStorageGranted ?? false)
-                      ? Icons.check_circle
-                      : (_cachedStorageGranted == null
-                          ? Icons.hourglass_empty
-                          : Icons.warning_amber),
-                  color: (_cachedStorageGranted ?? false)
-                      ? Colors.green
-                      : (_cachedStorageGranted == null
-                          ? Theme.of(context).colorScheme.outline
-                          : Theme.of(context).colorScheme.error),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: Text(
-                  (_cachedStorageGranted ?? false)
-                      ? l10n.t('settings.permGranted')
-                      : (_cachedStorageGranted == null
-                          ? l10n.t('settings.permChecking')
-                          : l10n.t('settings.permHint')),
-                  style: Theme.of(context).textTheme.bodySmall,
-                )),
-                const SizedBox(width: 8),
-                if (!(_cachedStorageGranted ?? false))
-                  FilledButton.tonal(
-                    onPressed: (_cachedStorageGranted == null) ? _checkStorage : _requestStorage,
-                    child: Text(
-                      (_cachedStorageGranted == null) ? l10n.t('settings.checkPerm') : l10n.t('settings.grantPerm'),
-                      style: const TextStyle(fontSize: 12)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _helpStep(context, '1', l10n.t('help.step1')),
+                  _helpStep(context, '2', l10n.t('help.step2')),
+                  _helpStep(context, '3', l10n.t('help.step3')),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l10n.t('help.tip'),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(height: 1.5),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                if (_cachedStorageGranted ?? false)
-                  IconButton(
-                    icon: const Icon(Icons.refresh, size: 18),
-                    onPressed: _checkStorage,
-                    tooltip: l10n.t('settings.checkPerm'),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.pinkAccent.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.favorite, size: 16, color: Colors.pink),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l10n.t('help.tip2'),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(height: 1.5),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-              ]),
+                ],
+              ),
             ),
           ),
+
           const Divider(height: 24),
-        ],
+          const Divider(height: 24),
 
-        // ========== Theme Mode (compact) ==========
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text(l10n.t('settings.themeMode'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(children: [
-            _compactTheme(ThemeMode.system, Icons.brightness_auto, l10n.t('settings.themeSystem')),
-            const SizedBox(width: 8),
-            _compactTheme(ThemeMode.light, Icons.light_mode, l10n.t('settings.themeLight')),
-            const SizedBox(width: 8),
-            _compactTheme(ThemeMode.dark, Icons.dark_mode, l10n.t('settings.themeDark')),
-          ]),
-        ),
-
-        const SizedBox(height: 16),
-
-        // ========== Color Scheme (compact) ==========
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Row(children: [
-            Text(l10n.t('settings.colorScheme'),
+          // ========== Storage Permission (Android) ==========
+          if (Theme.of(context).platform == TargetPlatform.android) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+              child: Text(
+                l10n.t('settings.permissions'),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary)),
-            const Spacer(),
-            ...presetColors.entries.map((entry) {
-              final sel = widget.config.colorScheme == entry.key;
-              return Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => widget.config.colorScheme = entry.key);
-                    widget.config.save();
-                    widget.onColorChanged(entry.key);
-                  },
-                  child: Container(
-                    width: sel ? 32 : 28, height: sel ? 32 : 28,
-                    decoration: BoxDecoration(
-                      color: entry.value, shape: BoxShape.circle,
-                      border: sel ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2) : null,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: (_cachedStorageGranted ?? false)
+                      ? Colors.green.withValues(alpha: 0.08)
+                      : (_cachedStorageGranted == null
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest
+                            : Theme.of(context).colorScheme.errorContainer
+                                  .withValues(alpha: 0.3)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      (_cachedStorageGranted ?? false)
+                          ? Icons.check_circle
+                          : (_cachedStorageGranted == null
+                                ? Icons.hourglass_empty
+                                : Icons.warning_amber),
+                      color: (_cachedStorageGranted ?? false)
+                          ? Colors.green
+                          : (_cachedStorageGranted == null
+                                ? Theme.of(context).colorScheme.outline
+                                : Theme.of(context).colorScheme.error),
                     ),
-                    child: sel ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        (_cachedStorageGranted ?? false)
+                            ? l10n.t('settings.permGranted')
+                            : (_cachedStorageGranted == null
+                                  ? l10n.t('settings.permChecking')
+                                  : l10n.t('settings.permHint')),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (!(_cachedStorageGranted ?? false))
+                      FilledButton.tonal(
+                        onPressed: (_cachedStorageGranted == null)
+                            ? _checkStorage
+                            : _requestStorage,
+                        child: Text(
+                          (_cachedStorageGranted == null)
+                              ? l10n.t('settings.checkPerm')
+                              : l10n.t('settings.grantPerm'),
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    if (_cachedStorageGranted ?? false)
+                      IconButton(
+                        icon: const Icon(Icons.refresh, size: 18),
+                        onPressed: _checkStorage,
+                        tooltip: l10n.t('settings.checkPerm'),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(height: 24),
+          ],
+
+          // ========== Theme Mode (compact) ==========
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(
+              l10n.t('settings.themeMode'),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                _compactTheme(
+                  ThemeMode.system,
+                  Icons.brightness_auto,
+                  l10n.t('settings.themeSystem'),
+                ),
+                const SizedBox(width: 8),
+                _compactTheme(
+                  ThemeMode.light,
+                  Icons.light_mode,
+                  l10n.t('settings.themeLight'),
+                ),
+                const SizedBox(width: 8),
+                _compactTheme(
+                  ThemeMode.dark,
+                  Icons.dark_mode,
+                  l10n.t('settings.themeDark'),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ========== Color Scheme (compact) ==========
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                Text(
+                  l10n.t('settings.colorScheme'),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
-              );
-            }),
-          ]),
-        ),
+                const Spacer(),
+                ...presetColors.entries.map((entry) {
+                  final sel = widget.config.colorScheme == entry.key;
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() => widget.config.colorScheme = entry.key);
+                        widget.config.save();
+                        widget.onColorChanged(entry.key);
+                      },
+                      child: Container(
+                        width: sel ? 32 : 28,
+                        height: sel ? 32 : 28,
+                        decoration: BoxDecoration(
+                          color: entry.value,
+                          shape: BoxShape.circle,
+                          border: sel
+                              ? Border.all(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  width: 2,
+                                )
+                              : null,
+                        ),
+                        child: sel
+                            ? const Icon(
+                                Icons.check,
+                                size: 16,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
 
-
-
-        // ========== Language ==========
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-          child: Text(l10n.t('settings.language'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary)),
-        ),
-        ..._languages.map((lang) {
-          final sel = widget.config.language == lang['code'];
-          return ListTile(
-            dense: true,
-            title: Text(lang['name']!),
-            trailing: sel ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
-            onTap: () async {
-              setState(() => widget.config.language = lang['code']!);
-              await widget.config.save();
-              widget.onConfigChanged();
-            },
-          );
-        }),
-
-
-        // ========== Close Behavior (Desktop only) ==========
-        if (Theme.of(context).platform == TargetPlatform.windows ||
-            Theme.of(context).platform == TargetPlatform.linux ||
-            Theme.of(context).platform == TargetPlatform.macOS) ...[
-          const Divider(height: 24),
+          // ========== Language ==========
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-            child: Text(l10n.t('settings.closeBehavior'),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary)),
+            child: Text(
+              l10n.t('settings.language'),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
-          ...['ask', 'tray', 'exit'].map((action) {
-            final labels = {
-              'ask': l10n.t('settings.closeAsk'),
-              'tray': l10n.t('settings.closeTray'),
-              'exit': l10n.t('settings.closeExit'),
-            };
-            final icons = {
-              'ask': Icons.help_outline,
-              'tray': Icons.minimize,
-              'exit': Icons.exit_to_app,
-            };
-            final sel = widget.config.closeAction == action;
+          ..._languages.map((lang) {
+            final sel = widget.config.language == lang['code'];
             return ListTile(
               dense: true,
-              leading: Icon(icons[action], size: 20),
-              title: Text(labels[action]!),
-              trailing: sel ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              title: Text(lang['name']!),
+              trailing: sel
+                  ? Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  : null,
               onTap: () async {
-                setState(() => widget.config.closeAction = action);
+                setState(() => widget.config.language = lang['code']!);
                 await widget.config.save();
+                widget.onConfigChanged();
               },
             );
           }),
+
+          // ========== Close Behavior (Desktop only) ==========
+          if (Theme.of(context).platform == TargetPlatform.windows ||
+              Theme.of(context).platform == TargetPlatform.linux ||
+              Theme.of(context).platform == TargetPlatform.macOS) ...[
+            const Divider(height: 24),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+              child: Text(
+                l10n.t('settings.closeBehavior'),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            ...['ask', 'tray', 'exit'].map((action) {
+              final labels = {
+                'ask': l10n.t('settings.closeAsk'),
+                'tray': l10n.t('settings.closeTray'),
+                'exit': l10n.t('settings.closeExit'),
+              };
+              final icons = {
+                'ask': Icons.help_outline,
+                'tray': Icons.minimize,
+                'exit': Icons.exit_to_app,
+              };
+              final sel = widget.config.closeAction == action;
+              return ListTile(
+                dense: true,
+                leading: Icon(icons[action], size: 20),
+                title: Text(labels[action]!),
+                trailing: sel
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () async {
+                  setState(() => widget.config.closeAction = action);
+                  await widget.config.save();
+                },
+              );
+            }),
+          ],
         ],
-
-
-      ]),
+      ),
     );
   }
 
@@ -362,16 +501,34 @@ class _SettingsPageState extends State<SettingsPage> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: sel ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+              color: sel
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.3),
               width: sel ? 2 : 1,
             ),
-            color: sel ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1) : null,
+            color: sel
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                : null,
           ),
-          child: Column(children: [
-            Icon(icon, size: 20, color: sel ? Theme.of(context).colorScheme.primary : null),
-            const SizedBox(height: 2),
-            Text(label, style: TextStyle(fontSize: 11, color: sel ? Theme.of(context).colorScheme.primary : null)),
-          ]),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: sel ? Theme.of(context).colorScheme.primary : null,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: sel ? Theme.of(context).colorScheme.primary : null,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -380,15 +537,37 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _helpStep(BuildContext context, String num, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: 20, height: 20,
-          decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
-          child: Center(child: Text(num, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onPrimary))),
-        ),
-        const SizedBox(width: 8),
-        Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5))),
-      ]),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                num,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(height: 1.5),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -397,16 +576,24 @@ class _SettingsPageState extends State<SettingsPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Row(children: [
-          const Icon(Icons.privacy_tip_outlined, size: 20),
-          const SizedBox(width: 8),
-          Text(l10n.t('about.privacy')),
-        ]),
+        title: Row(
+          children: [
+            const Icon(Icons.privacy_tip_outlined, size: 20),
+            const SizedBox(width: 8),
+            Text(l10n.t('about.privacy')),
+          ],
+        ),
         content: SingleChildScrollView(
-          child: Text(l10n.t('privacy.content'), style: const TextStyle(height: 1.6)),
+          child: Text(
+            l10n.t('privacy.content'),
+            style: const TextStyle(height: 1.6),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(MaterialLocalizations.of(ctx).okButtonLabel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(MaterialLocalizations.of(ctx).okButtonLabel),
+          ),
         ],
       ),
     );

@@ -3,6 +3,24 @@
 > 所有版本均可在 [GitHub Releases](https://github.com/zocs/inout/releases) 下载。
 > All versions available at [GitHub Releases](https://github.com/zocs/inout/releases).
 
+## [v0.3.1](https://github.com/zocs/inout/releases/tag/v0.3.1) (2026-04-20)
+
+**中文：**
+- 🐛 修复 Android 8/9 等 API 30 以下设备因 DT_RELR packed relocations 导致的 dufs 启动崩溃
+- 🐛 修复应用内版本号显示与 `pubspec.yaml` 不一致
+- 🐛 修复传输日志统计无法累计文件大小的问题
+- 🏗️ 传输日志改为增量读取，避免长时间运行后反复整文件扫描
+- ✨ 新增显式“选择分享文件”入口，不再只依赖桌面拖放触发单文件分享
+
+**English：**
+- 🐛 Fixed dufs startup crash on Android API < 30 caused by DT_RELR packed relocations
+- 🐛 Fixed in-app version display drifting from `pubspec.yaml`
+- 🐛 Fixed transfer log stats not accumulating file sizes
+- 🏗️ Switched transfer log reading to incremental reads to avoid full-file rescans over long sessions
+- ✨ Added an explicit "select share file" entry instead of relying only on desktop drag-and-drop
+
+---
+
 ## [v0.3.0](https://github.com/zocs/inout/releases/tag/v0.3.0) (2026-03-31)
 
 **中文：**

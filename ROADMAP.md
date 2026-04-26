@@ -1,36 +1,22 @@
 # inout Roadmap
 
-## v0.2.3 — 稳定性重构 ✅ 已完成（未发版）
+## Current Status (2026-04-27)
 
-- [x] Android Native Service 架构重构（dufs 进程由 Service 管理）
-- [x] codeview bug 修复（拖放逻辑、权限按钮、orphan 进程检查）
-- [x] 返回键确认退出（服务运行中）
-- [x] 地址列表始终显示
-- [x] stopServer 等待进程退出
-- [x] Linux/macOS orphan 进程名检查
+### Recently completed
+- [x] dufs FFI desktop embedding
+- [x] Android foreground service lifecycle
+- [x] Hidden system files + `index.html` rendering
+- [x] Android API < 30 dufs startup crash fix
+- [x] Explicit single-file picker entry
+- [x] Incremental transfer log reading
 
-**待办**：发版 GitHub Release v0.2.3
-
----
-
-## v0.3.0 — 构建优化 + 体验打磨（下一版本）
-
-### CI/CD 优化
-- [ ] Flutter SDK 缓存 + pub-cache 缓存（减少 30-50% 构建时间）
-- [ ] Linux ARM64 统一用 flutter-action（去掉手动 git clone）
-- [ ] 所有平台 build 加 `--obfuscate --split-debug-info`（包体瘦身）
-- [ ] 无效 release pattern 清理（`.rpm`、`.dmg` 匹配不到任何文件）
-- [ ] 生成 checksums.txt
-
-### 体验优化
-- [ ] 检测到服务运行中退出时，通知栏 Service 也同步停止
-- [ ] 首次启动引导加网络说明（热点/局域网）
-- [ ] 拖放文件时显示进度/loading 状态
-
-### 代码卫生
-- [ ] `_killOrphanDufs` 与 `killOrphanOnPort` 合并（消除 ~30 行重复）
-- [ ] tray 临时图标文件清理
-- [ ] `_trackActivity` 正则加强（防误匹配）
+### Next up
+- [ ] Flutter/CI cache to reduce release build time
+- [ ] Generate `checksums.txt` for release assets
+- [ ] Unify orphan cleanup paths (`_killOrphanDufs` / `killOrphanOnPort`)
+- [ ] Clean tray temporary icon files
+- [ ] Tighten `_trackActivity` request matching
+- [ ] Stop Android foreground service reliably on all app exit paths
 
 ---
 
@@ -71,7 +57,7 @@
 
 | 问题 | 严重性 | 状态 |
 |------|--------|------|
-| AppImage dufs 外部无法访问 | 中 | 待查（deb 正常，可能 FUSE 限制） |
+| AppImage dufs 外部无法访问 | 中 | 已通过 FFI + `/tmp` 提取缓解，仍需更多发行版验证 |
 | macOS 未签名，需手动 xattr | 低 | 无法自动签名 |
 | `withValues(alpha:)` 需 Flutter 3.27+ | 低 | 当前版本无问题 |
 | `_killOrphanDufs` 与 `killOrphanOnPort` 代码重复 | 低 | 功能正常 |

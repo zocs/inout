@@ -77,7 +77,7 @@ A graphical file sharing tool based on [dufs](https://github.com/sigoden/dufs). 
 
 ### Steps
 
-1. Pick a folder
+1. Pick a folder or a single file
 2. Tap "Start Server"
 3. Scan QR code or enter URL in browser (port required)
 4. Share files — done!

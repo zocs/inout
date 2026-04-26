@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import java.io.File
 
 class DufsForegroundService : Service() {
 
@@ -96,8 +97,12 @@ class DufsForegroundService : Service() {
 
             Log.d(TAG, "Starting dufs: ${fullArgs.joinToString(" ")}")
 
+            val workingDir = File(path).let { target ->
+                if (target.isDirectory) target else target.parentFile ?: filesDir
+            }
+
             val pb = ProcessBuilder(fullArgs)
-            pb.directory(java.io.File(path))
+            pb.directory(workingDir)
             // Redirect stderr to a log file for debugging
             val errLog = java.io.File(cacheDir, "dufs_stderr.log")
             pb.redirectErrorStream(false)

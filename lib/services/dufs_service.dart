@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -26,8 +27,10 @@ class DufsService extends ChangeNotifier {
   int _totalRequests = 0;
   String? _lastActivity;
   List<String> _allAddresses = [];
+
   /// 网卡名称列表，与 allAddresses 一一对应
   List<String> _allInterfaceNames = [];
+
   /// 传输日志（最新的在前）
   final List<TransferLog> _transferLogs = [];
 
@@ -44,11 +47,16 @@ class DufsService extends ChangeNotifier {
   void _log(String msg) {
     debugPrint(msg);
     // ignore: body_might_complete_normally_catch_error
-    if (Platform.isAndroid) _ch.invokeMethod('log', {'msg': msg}).catchError((_) {});
+    if (Platform.isAndroid)
+      _ch.invokeMethod('log', {'msg': msg}).catchError((_) {});
   }
 
   Future<String?> _getWifiIP() async {
-    try { return await NetworkInfo().getWifiIP(); } catch (_) { return null; }
+    try {
+      return await NetworkInfo().getWifiIP();
+    } catch (_) {
+      return null;
+    }
   }
 
   /// 获取所有可用网络接口的 IPv4 地址及网卡名称
@@ -62,7 +70,8 @@ class DufsService extends ChangeNotifier {
       );
       for (final iface in interfaces) {
         for (final addr in iface.addresses) {
-          if (addr.address != '127.0.0.1' && !addresses.contains(addr.address)) {
+          if (addr.address != '127.0.0.1' &&
+              !addresses.contains(addr.address)) {
             addresses.add(addr.address);
             names.add(iface.name);
           }
@@ -89,16 +98,29 @@ class DufsService extends ChangeNotifier {
   Future<void> killOrphanOnPort(int port) async {
     try {
       if (Platform.isAndroid) {
-        await Process.run('pkill', ['-f', 'libdufs.so']).catchError((_) => ProcessResult(0, 1, '', ''));
+        await Process.run('pkill', [
+          '-f',
+          'libdufs.so',
+        ]).catchError((_) => ProcessResult(0, 1, '', ''));
       } else if (Platform.isLinux || Platform.isMacOS) {
-        final r = await Process.run('lsof', ['-ti', ':$port']).catchError((_) => ProcessResult(0, 1, '', ''));
+        final r = await Process.run('lsof', [
+          '-ti',
+          ':$port',
+        ]).catchError((_) => ProcessResult(0, 1, '', ''));
         final pids = r.stdout.toString().trim().split('\n');
         for (final pid in pids) {
           if (pid.isEmpty) continue;
-          final cmd = await Process.run('ps', ['-p', pid, '-o', 'comm=']).catchError((_) => ProcessResult(0, 1, '', ''));
+          final cmd = await Process.run('ps', [
+            '-p',
+            pid,
+            '-o',
+            'comm=',
+          ]).catchError((_) => ProcessResult(0, 1, '', ''));
           if (cmd.stdout.toString().toLowerCase().contains('dufs')) {
             _log('Killing orphan dufs PID=$pid on port $port');
-            await Process.run('kill', [pid]).catchError((_) => ProcessResult(0, 1, '', ''));
+            await Process.run('kill', [
+              pid,
+            ]).catchError((_) => ProcessResult(0, 1, '', ''));
           }
         }
       }
@@ -121,7 +143,12 @@ class DufsService extends ChangeNotifier {
             final parts = line.trim().split(RegExp(r'\s+'));
             final pid = int.tryParse(parts.last);
             if (pid != null) {
-              final taskResult = await Process.run('tasklist', ['/FI', 'PID eq $pid', '/FO', 'CSV']);
+              final taskResult = await Process.run('tasklist', [
+                '/FI',
+                'PID eq $pid',
+                '/FO',
+                'CSV',
+              ]);
               final output = taskResult.stdout as String;
               if (output.toLowerCase().contains('dufs')) {
                 _log('Killing orphan dufs process PID=$pid on port $port');
@@ -131,16 +158,29 @@ class DufsService extends ChangeNotifier {
           }
         }
       } else if (Platform.isAndroid) {
-        await Process.run('pkill', ['-f', 'libdufs.so']).catchError((_) => ProcessResult(0, 1, '', ''));
+        await Process.run('pkill', [
+          '-f',
+          'libdufs.so',
+        ]).catchError((_) => ProcessResult(0, 1, '', ''));
       } else if (Platform.isMacOS || Platform.isLinux) {
-        final r = await Process.run('lsof', ['-ti', ':$port']).catchError((_) => ProcessResult(0, 1, '', ''));
+        final r = await Process.run('lsof', [
+          '-ti',
+          ':$port',
+        ]).catchError((_) => ProcessResult(0, 1, '', ''));
         final pids = r.stdout.toString().trim().split('\n');
         for (final pid in pids) {
           if (pid.isEmpty) continue;
-          final cmd = await Process.run('ps', ['-p', pid, '-o', 'comm=']).catchError((_) => ProcessResult(0, 1, '', ''));
+          final cmd = await Process.run('ps', [
+            '-p',
+            pid,
+            '-o',
+            'comm=',
+          ]).catchError((_) => ProcessResult(0, 1, '', ''));
           if (cmd.stdout.toString().toLowerCase().contains('dufs')) {
             _log('Killing orphan dufs PID=$pid on port $port');
-            await Process.run('kill', [pid]).catchError((_) => ProcessResult(0, 1, '', ''));
+            await Process.run('kill', [
+              pid,
+            ]).catchError((_) => ProcessResult(0, 1, '', ''));
           }
         }
       }
@@ -155,20 +195,43 @@ class DufsService extends ChangeNotifier {
     final tmpDir = await getTemporaryDirectory();
     _logFilePath = '${tmpDir.path}/inout_dufs.log';
     // Clear previous log file
-    try { await File(_logFilePath!).writeAsString(''); } catch (_) {}
+    try {
+      await File(_logFilePath!).writeAsString('');
+    } catch (_) {}
     _logFilePosition = 0;
-    if (config.path.isEmpty) { _error = 'No directory'; notifyListeners(); return; }
+    _logFileRemainder = '';
+    if (config.path.isEmpty) {
+      _error = 'No directory';
+      notifyListeners();
+      return;
+    }
     // 单文件模式检查文件是否存在，目录模式检查目录是否存在
     if (config.shareSingleFile) {
-      if (!await File(config.path).exists()) { _error = 'File not found'; notifyListeners(); return; }
+      if (!await File(config.path).exists()) {
+        _error = 'File not found';
+        notifyListeners();
+        return;
+      }
       final parentDir = p.dirname(config.path);
-      if (!await Directory(parentDir).exists()) { _error = 'Parent directory not found'; notifyListeners(); return; }
+      if (!await Directory(parentDir).exists()) {
+        _error = 'Parent directory not found';
+        notifyListeners();
+        return;
+      }
     } else {
-      if (!await Directory(config.path).exists()) { _error = 'Directory not found'; notifyListeners(); return; }
+      if (!await Directory(config.path).exists()) {
+        _error = 'Directory not found';
+        notifyListeners();
+        return;
+      }
     }
     // Validate permission consistency
     final permError = config.validatePermissions();
-    if (permError != null) { _error = permError; notifyListeners(); return; }
+    if (permError != null) {
+      _error = permError;
+      notifyListeners();
+      return;
+    }
     // Check port availability, kill orphan dufs if needed
     if (!await _isPortAvailable(config.port)) {
       _log('Port ${config.port} in use, attempting to kill orphan dufs...');
@@ -185,9 +248,11 @@ class DufsService extends ChangeNotifier {
       }
     }
     try {
-      _error = null; notifyListeners();
+      _error = null;
+      notifyListeners();
       if (Platform.isAndroid) {
-        final granted = await _ch.invokeMethod<bool>('isStorageGranted') ?? false;
+        final granted =
+            await _ch.invokeMethod<bool>('isStorageGranted') ?? false;
         _log('MANAGE_EXTERNAL_STORAGE granted: $granted');
         if (!granted) {
           _error = '需要开启"所有文件访问权限"才能正常列出文件。请在系统设置中开启后重试。';
@@ -238,14 +303,19 @@ class DufsService extends ChangeNotifier {
         _allAddresses.insert(0, _localIp!);
         _allInterfaceNames.insert(0, 'WiFi');
       }
-      if (_allAddresses.isEmpty) { _allAddresses.add('127.0.0.1'); _allInterfaceNames.add('Local'); }
+      if (_allAddresses.isEmpty) {
+        _allAddresses.add('127.0.0.1');
+        _allInterfaceNames.add('Local');
+      }
       _serverUrl = 'http://${_allAddresses.first}:${config.port}';
       _log('server: $_serverUrl, all: $_allAddresses');
       // Start polling log file for transfer records
       _startLogFilePolling();
       notifyListeners();
     } catch (e) {
-      _error = 'Start failed: $e'; _isRunning = false; notifyListeners();
+      _error = 'Start failed: $e';
+      _isRunning = false;
+      notifyListeners();
       _log('failed: $e');
     }
   }
@@ -260,27 +330,33 @@ class DufsService extends ChangeNotifier {
       if (c.allowArchive) args.add('--allow-archive');
       if (c.allowSymlink) args.add('--allow-symlink');
     }
-    if (c.auth != null && c.auth!.isNotEmpty) args.addAll(['--auth', '${c.auth!}@/:rw']);
+    if (c.auth != null && c.auth!.isNotEmpty)
+      args.addAll(['--auth', '${c.auth!}@/:rw']);
     if (c.cors) args.add('--enable-cors');
-    if (c.hideSystemFiles) args.addAll(['--hidden', '.git,.DS_Store,Thumbs.db,.env,.idea,.vscode,__pycache__,.svn,.hg']);
+    if (c.hideSystemFiles)
+      args.addAll([
+        '--hidden',
+        '.git,.DS_Store,Thumbs.db,.env,.idea,.vscode,__pycache__,.svn,.hg',
+      ]);
     if (c.renderTryIndex) args.add('--render-try-index');
     // Write HTTP logs to a temp file so we can read them on all platforms
     if (_logFilePath != null) args.addAll(['--log-file', _logFilePath!]);
-    // dufs 只能服务目录，单文件模式传父目录
-    if (c.shareSingleFile) {
-      args.add(p.dirname(c.path));
-    } else {
-      args.add(c.path);
-    }
+    // dufs supports serving a single file directly.
+    args.add(c.path);
     return args;
   }
 
   /// Path to the dufs log file (set before start, cleared on stop)
   String? _logFilePath;
+
   /// Timer to poll the log file for new entries (Android/workaround)
   Timer? _logFileTimer;
+
   /// Last position read in the log file
   int _logFilePosition = 0;
+
+  /// Partial line buffered between incremental reads
+  String _logFileRemainder = '';
 
   // ==================== Start dufs via FFI (desktop) ====================
   Future<void> _startDufsFfi(ServerConfig config) async {
@@ -310,7 +386,9 @@ class DufsService extends ChangeNotifier {
       throw Exception('dufs 服务组件缺失，请重新安装应用。路径: $binPath');
     }
     final args = _buildArgs(config);
-    final workDir = config.shareSingleFile ? p.dirname(config.path) : config.path;
+    final workDir = config.shareSingleFile
+        ? p.dirname(config.path)
+        : config.path;
     _log('dufs: $binPath ${args.join(' ')}');
     _process = await Process.start(binPath, args, workingDirectory: workDir);
     _process!.stdout.listen((d) {
@@ -328,8 +406,12 @@ class DufsService extends ChangeNotifier {
 
   /// 解析 dufs 输出行，更新请求计数和日志列表
   void _trackActivity(String line) {
-    final isRequest = RegExp(r'[1-5]\d{2}').hasMatch(line) &&
-        (line.contains('GET') || line.contains('POST') || line.contains('PUT') || line.contains('DELETE'));
+    final isRequest =
+        RegExp(r'[1-5]\d{2}').hasMatch(line) &&
+        (line.contains('GET') ||
+            line.contains('POST') ||
+            line.contains('PUT') ||
+            line.contains('DELETE'));
     if (isRequest) {
       _totalRequests++;
       _lastActivity = DateTime.now().toIso8601String().substring(11, 19);
@@ -348,9 +430,13 @@ class DufsService extends ChangeNotifier {
     final path = entry.path;
     if (path == '/' || path.isEmpty) return false;
     if (path.endsWith('/')) return false;
-    if (path.endsWith('.css') || path.endsWith('.js') || path.endsWith('.ico')) return false;
+    if (path.endsWith('.css') || path.endsWith('.js') || path.endsWith('.ico'))
+      return false;
     if (path.contains('/dufs-assets/')) return false;
-    if (entry.method == 'MKCOL' || entry.method == 'OPTIONS' || entry.method == 'PROPFIND') return false;
+    if (entry.method == 'MKCOL' ||
+        entry.method == 'OPTIONS' ||
+        entry.method == 'PROPFIND')
+      return false;
     if (entry.isDownload && !path.contains('.')) return false;
     return entry.isDownload || entry.isUpload || entry.isDelete;
   }
@@ -362,7 +448,10 @@ class DufsService extends ChangeNotifier {
 
   void _startLogFilePolling() {
     _logFileTimer?.cancel();
-    _logFileTimer = Timer.periodic(const Duration(seconds: 2), (_) => _readLogFile());
+    _logFileTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => _readLogFile(),
+    );
   }
 
   Future<void> _readLogFile() async {
@@ -370,13 +459,31 @@ class DufsService extends ChangeNotifier {
     try {
       final file = File(_logFilePath!);
       if (!await file.exists()) return;
-      final content = await file.readAsString();
-      if (content.length <= _logFilePosition) return;
-      final newPart = content.substring(_logFilePosition);
-      _logFilePosition = content.length;
-      for (final line in newPart.split('\n')) {
-        final trimmed = line.trim();
-        if (trimmed.isNotEmpty) _trackActivity(trimmed);
+      final raf = await file.open();
+      try {
+        final length = await raf.length();
+        if (length < _logFilePosition) {
+          _logFilePosition = 0;
+          _logFileRemainder = '';
+        }
+        if (length == _logFilePosition) return;
+
+        await raf.setPosition(_logFilePosition);
+        final bytes = await raf.read(length - _logFilePosition);
+        _logFilePosition = length;
+
+        final chunk = utf8.decode(bytes, allowMalformed: true);
+        final merged = _logFileRemainder + chunk;
+        final endsWithNewline = merged.endsWith('\n');
+        final lines = merged.split('\n');
+        _logFileRemainder = endsWithNewline ? '' : lines.removeLast();
+
+        for (final line in lines) {
+          final trimmed = line.trim();
+          if (trimmed.isNotEmpty) _trackActivity(trimmed);
+        }
+      } finally {
+        await raf.close();
       }
     } catch (_) {}
   }
@@ -396,15 +503,26 @@ class DufsService extends ChangeNotifier {
     } else if (_process != null) {
       // Process mode (iOS): kill child process
       _process!.kill();
-      try { await _process!.exitCode.timeout(const Duration(seconds: 2)); } catch (_) {}
+      try {
+        await _process!.exitCode.timeout(const Duration(seconds: 2));
+      } catch (_) {}
       _process = null;
     }
     if (Platform.isAndroid) {
       _ch.invokeMethod('stopForegroundService').catchError((_) {});
     }
-    _isRunning = false; _serverUrl = null; _totalRequests = 0; _lastActivity = null;
-    _allAddresses = []; _allInterfaceNames = []; _transferLogs.clear();
-    _logFileTimer?.cancel(); _logFileTimer = null; _logFilePath = null; _logFilePosition = 0;
+    _isRunning = false;
+    _serverUrl = null;
+    _totalRequests = 0;
+    _lastActivity = null;
+    _allAddresses = [];
+    _allInterfaceNames = [];
+    _transferLogs.clear();
+    _logFileTimer?.cancel();
+    _logFileTimer = null;
+    _logFilePath = null;
+    _logFilePosition = 0;
+    _logFileRemainder = '';
     notifyListeners();
   }
 
@@ -429,7 +547,10 @@ class DufsService extends ChangeNotifier {
           _allAddresses.insert(0, _localIp!);
           _allInterfaceNames.insert(0, 'WiFi');
         }
-        if (_allAddresses.isEmpty) { _allAddresses.add('127.0.0.1'); _allInterfaceNames.add('Local'); }
+        if (_allAddresses.isEmpty) {
+          _allAddresses.add('127.0.0.1');
+          _allInterfaceNames.add('Local');
+        }
         _serverUrl = 'http://${_allAddresses.first}:$port';
         _isRunning = true;
         _log('restored from native service: $_serverUrl');
@@ -443,9 +564,13 @@ class DufsService extends ChangeNotifier {
   @override
   void dispose() {
     if (_useFfi && _dufsFfi.isLoaded) {
-      try { _dufsFfi.stop(); } catch (_) {}
+      try {
+        _dufsFfi.stop();
+      } catch (_) {}
     }
-    try { _process?.kill(); } catch (_) {}
+    try {
+      _process?.kill();
+    } catch (_) {}
     _process = null;
     _isRunning = false;
     super.dispose();

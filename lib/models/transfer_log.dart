@@ -33,8 +33,10 @@ class TransferLog {
   /// "2026-03-26T12:00:00+08:00 INFO - 192.168.1.100 \"GET /path\" 200"
   static TransferLog? parse(String line) {
     try {
-      // Format: TIMESTAMP LEVEL - IP "METHOD PATH" STATUS
-      final regex = RegExp(r'^(\S+)\s+(\S+)\s+-\s+(\S+)\s+"(\S+)\s+(\S+)"\s+(\d{3})');
+      // Format: TIMESTAMP LEVEL - IP "METHOD PATH" STATUS [SIZE]
+      final regex = RegExp(
+        r'^(\S+)\s+(\S+)\s+-\s+(\S+)\s+"(\S+)\s+(.+?)"\s+(\d{3})(?:\s+(\d+|-))?',
+      );
       final match = regex.firstMatch(line);
       if (match == null) return null;
 
@@ -45,6 +47,7 @@ class TransferLog {
       final method = match.group(4)!.toUpperCase();
       final path = match.group(5)!;
       final status = int.tryParse(match.group(6)!);
+      final size = int.tryParse(match.group(7) ?? '');
       if (status == null) return null;
 
       return TransferLog(
@@ -52,6 +55,7 @@ class TransferLog {
         method: method,
         path: path,
         status: status,
+        size: size,
         ip: ip,
       );
     } catch (_) {

@@ -1,4 +1,4 @@
-﻿class AppLocalizations {
+class AppLocalizations {
   final String language;
   AppLocalizations(this.language);
 
@@ -14,6 +14,9 @@
       'nav.home': '首页',
       'nav.settings': '设置',
       'home.selectDir': '选择分享目录',
+      'home.selectFile': '选择分享文件',
+      'home.chooseFolder': '选目录',
+      'home.chooseFile': '选文件',
       'home.permissionPreset': '权限预设',
       'home.customPerm': '自定义权限',
       'home.readonly': '只读',
@@ -85,11 +88,13 @@
       'about.description': '基于开源项目 dufs 开发的图形界面版本，让文件分享零配置、零门槛。',
       'about.privacy': '隐私政策',
       'about.license': '开源许可',
-      'privacy.content': 'inout 不收集、存储或传输任何个人数据到外部服务器。\n\n文件分享通过本地网络直接在设备之间进行，所有数据传输发生在局域网（LAN）或您自行配置的网络环境中。\n\n本应用使用以下权限：\n• 存储/文件：用于选择和分享设备上的目录\n• 网络：用于运行本地 HTTP 文件服务器\n• 网络状态：用于检测本机 IP 地址生成二维码\n\n本应用不使用任何第三方分析、广告或追踪服务。\n\n联系方式：zocs@live.com',
-      'help.step1': '点击「选择分享目录」，选好你想分享的文件夹',
+      'privacy.content':
+          'inout 不收集、存储或传输任何个人数据到外部服务器。\n\n文件分享通过本地网络直接在设备之间进行，所有数据传输发生在局域网（LAN）或您自行配置的网络环境中。\n\n本应用使用以下权限：\n• 存储/文件：用于选择和分享设备上的目录\n• 网络：用于运行本地 HTTP 文件服务器\n• 网络状态：用于检测本机 IP 地址生成二维码\n\n本应用不使用任何第三方分析、广告或追踪服务。\n\n联系方式：zocs@live.com',
+      'help.step1': '点击「选目录」或「选文件」，选好你想分享的内容',
       'help.step2': '按下「启动服务」，等待绿色指示灯亮起',
       'help.step3': '用手机或其他设备扫描二维码，即可上传和下载文件',
-      'help.tip': '目前仅测试了局域网（含热点局域网）传输。ZeroTier、Tailscale、EasyTier 等组网工具也可使用，但请优先使用本地局域网（LAN/WLAN），需要传输的设备连接同一网络可获得最佳体验。',
+      'help.tip':
+          '目前仅测试了局域网（含热点局域网）传输。ZeroTier、Tailscale、EasyTier 等组网工具也可使用，但请优先使用本地局域网（LAN/WLAN），需要传输的设备连接同一网络可获得最佳体验。',
       'help.tip2': '建议锁定 App 后台和调整省电策略为无限制，以保证传输稳定。',
     },
     'en': {
@@ -98,6 +103,9 @@
       'nav.home': 'Home',
       'nav.settings': 'Settings',
       'home.selectDir': 'Select Share Directory',
+      'home.selectFile': 'Select Share File',
+      'home.chooseFolder': 'Folder',
+      'home.chooseFile': 'File',
       'home.permissionPreset': 'Permission Preset',
       'home.customPerm': 'Custom Permissions',
       'home.readonly': 'Readonly',
@@ -111,20 +119,24 @@
       'home.portHint': '♥️Suggest using port above 1000 to avoid conflicts',
       'home.advanced': 'Advanced Options',
       'home.enableAuth': 'Enable Auth',
-      'home.authRequired': 'Please enter username and password before starting the server',
+      'home.authRequired':
+          'Please enter username and password before starting the server',
       'home.username': 'Username',
       'home.password': 'Password',
       'home.cors': 'Enable CORS',
       'home.corsHint': 'Allow cross-origin requests for browser access',
       'home.hideSystemFiles': 'Hide System Files',
-      'home.hideSystemFilesHint': 'Hide .git, .DS_Store, Thumbs.db and other system files',
+      'home.hideSystemFilesHint':
+          'Hide .git, .DS_Store, Thumbs.db and other system files',
       'home.renderTryIndex': 'Render Index',
-      'home.renderTryIndexHint': 'Auto-render index.html if present, otherwise show directory listing',
+      'home.renderTryIndexHint':
+          'Auto-render index.html if present, otherwise show directory listing',
       'home.startServer': 'Start Server',
       'home.stopServer': 'Stop Server',
       'home.running': 'Server Running',
       'home.copyUrl': 'URL Copied',
-      'home.scanHint': 'Scan QR code or enter the URL directly in your browser (port required)',
+      'home.scanHint':
+          'Scan QR code or enter the URL directly in your browser (port required)',
       'home.localIp': 'Local IP',
       'home.allAddresses': 'All Network Interfaces',
       'home.dropHint': 'Drop files or folders here',
@@ -137,17 +149,20 @@
       'home.closeDontAsk': 'Don\'t ask again',
       'home.error.selectDir': 'Please select a share directory first',
       'home.error.serverFailed': 'Failed to start server',
-      'home.error.portInUse': 'Port {port} is already in use, please choose another',
+      'home.error.portInUse':
+          'Port {port} is already in use, please choose another',
       'home.restartHint': 'Changes require restart to take effect',
       'home.exitConfirm': 'Press again to exit',
       'home.exitWhileRunning': 'Server Running',
-      'home.exitWhileRunningMsg': 'Exiting will stop the file sharing server. Other devices will lose access. Exit?',
+      'home.exitWhileRunningMsg':
+          'Exiting will stop the file sharing server. Other devices will lose access. Exit?',
       'home.exitAndStop': 'Stop & Exit',
       'log.title': 'Transfer Log',
       'log.clear': 'Clear',
       'log.empty': 'No transfer records yet',
       'perm.restartTitle': 'Confirm Restart',
-      'perm.restartMsg': 'Active connections detected. Changing permissions will restart the server and may interrupt ongoing transfers. Continue?',
+      'perm.restartMsg':
+          'Active connections detected. Changing permissions will restart the server and may interrupt ongoing transfers. Continue?',
       'perm.restart': 'Restart',
       'settings.themeMode': 'Theme Mode',
       'settings.themeSystem': 'System',
@@ -166,15 +181,20 @@
       'settings.closeAsk': 'Ask every time',
       'settings.closeTray': 'Minimize to tray',
       'settings.closeExit': 'Exit directly',
-      'about.description': 'A graphical interface built on the open-source project dufs, making file sharing zero-configuration and zero-barrier.',
+      'about.description':
+          'A graphical interface built on the open-source project dufs, making file sharing zero-configuration and zero-barrier.',
       'about.privacy': 'Privacy Policy',
       'about.license': 'Licenses',
-      'privacy.content': 'inout does NOT collect, store, or transmit any personal data to external servers.\n\nFile sharing happens directly between devices on your local network. All data transfer occurs within your LAN or your own network setup.\n\nPermissions used:\n• Storage/Files: To select and share directories\n• Internet/Network: To run the local HTTP file server\n• Network State: To detect local IP for QR code generation\n\nNo third-party analytics, advertising, or tracking services are used.\n\nContact: zocs@live.com',
-      'help.step1': 'Tap "Select Share Directory" and choose the folder you want to share',
+      'privacy.content':
+          'inout does NOT collect, store, or transmit any personal data to external servers.\n\nFile sharing happens directly between devices on your local network. All data transfer occurs within your LAN or your own network setup.\n\nPermissions used:\n• Storage/Files: To select and share directories\n• Internet/Network: To run the local HTTP file server\n• Network State: To detect local IP for QR code generation\n\nNo third-party analytics, advertising, or tracking services are used.\n\nContact: zocs@live.com',
+      'help.step1': 'Tap "Folder" or "File" and choose what you want to share',
       'help.step2': 'Press "Start Server" and wait for the green indicator',
-      'help.step3': 'Scan the QR code with your phone or other device to upload and download files',
-      'help.tip': 'Currently tested only for LAN (including hotspot LAN) transfer. Network tools like ZeroTier, Tailscale, and EasyTier also work, but for the best experience, use a local network (LAN/WLAN) and connect all devices to the same network.',
-      'help.tip2': 'Consider pinning the app to background and setting battery optimization to unrestricted for stable transfers.',
+      'help.step3':
+          'Scan the QR code with your phone or other device to upload and download files',
+      'help.tip':
+          'Currently tested only for LAN (including hotspot LAN) transfer. Network tools like ZeroTier, Tailscale, and EasyTier also work, but for the best experience, use a local network (LAN/WLAN) and connect all devices to the same network.',
+      'help.tip2':
+          'Consider pinning the app to background and setting battery optimization to unrestricted for stable transfers.',
     },
     'zhTW': {
       'app.name': 'inout',
@@ -182,6 +202,9 @@
       'nav.home': '首頁',
       'nav.settings': '設定',
       'home.selectDir': '選擇分享目錄',
+      'home.selectFile': '選擇分享檔案',
+      'home.chooseFolder': '選目錄',
+      'home.chooseFile': '選檔案',
       'home.permissionPreset': '權限預設',
       'home.customPerm': '自訂權限',
       'home.readonly': '僅瀏覽',
@@ -253,11 +276,13 @@
       'about.description': '基於開源專案 dufs 開發的圖形介面版本，讓檔案分享零設定、零門檻。',
       'about.privacy': '隱私權政策',
       'about.license': '開源許可',
-      'privacy.content': 'inout 不收集、儲存或傳輸任何個人資料到外部伺服器。\n\n檔案分享透過本地網路直接在裝置之間進行，所有資料傳輸發生在區域網路（LAN）或您自行設定的網路環境中。\n\n本應用程式使用以下權限：\n• 儲存/檔案：用於選擇和分享裝置上的目錄\n• 網路：用於執行本地 HTTP 檔案伺服器\n• 網路狀態：用於偵測本機 IP 位址產生 QR 碼\n\n本應用程式不使用任何第三方分析、廣告或追蹤服務。\n\n聯絡方式：zocs@live.com',
-      'help.step1': '點擊「選擇分享目錄」，選好你想分享的資料夾',
+      'privacy.content':
+          'inout 不收集、儲存或傳輸任何個人資料到外部伺服器。\n\n檔案分享透過本地網路直接在裝置之間進行，所有資料傳輸發生在區域網路（LAN）或您自行設定的網路環境中。\n\n本應用程式使用以下權限：\n• 儲存/檔案：用於選擇和分享裝置上的目錄\n• 網路：用於執行本地 HTTP 檔案伺服器\n• 網路狀態：用於偵測本機 IP 位址產生 QR 碼\n\n本應用程式不使用任何第三方分析、廣告或追蹤服務。\n\n聯絡方式：zocs@live.com',
+      'help.step1': '點擊「選目錄」或「選檔案」，選好你想分享的內容',
       'help.step2': '按下「啟動服務」，等待綠色指示燈亮起',
       'help.step3': '用手機或其他裝置掃描 QR 碼，即可上傳和下載檔案',
-      'help.tip': '目前僅測試了區域網路（含熱點區域網路）傳輸。ZeroTier、Tailscale、EasyTier 等組網工具也可使用，但請優先使用本地區域網路（LAN/WLAN），需要傳輸的裝置連接同一網路可獲得最佳體驗。',
+      'help.tip':
+          '目前僅測試了區域網路（含熱點區域網路）傳輸。ZeroTier、Tailscale、EasyTier 等組網工具也可使用，但請優先使用本地區域網路（LAN/WLAN），需要傳輸的裝置連接同一網路可獲得最佳體驗。',
       'help.tip2': '建議鎖定 App 後台和調整省電策略為無限制，以保證傳輸穩定。',
     },
   };

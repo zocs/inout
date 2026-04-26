@@ -24,6 +24,7 @@
 
 - [ ] `CHANGELOG.md` 已添加 X.Y.Z 版本条目
 - [ ] `README.md` / `README_zh.md` 截图/功能描述是否需要更新
+- [ ] `ROADMAP.md` 当前状态与实际 release 节奏一致
 
 ## 4. Git
 

@@ -4,7 +4,7 @@ import 'pages/home_page.dart';
 import 'pages/setup_wizard_page.dart';
 import 'pages/splash_page.dart';
 
-const appVersion = '0.3.0';
+const appVersion = '0.3.1';
 
 const Map<String, Color> presetColors = {
   'coral': Color(0xFFFF6B5A),
@@ -50,7 +50,10 @@ class App extends StatelessWidget {
       locale: _localeFromCode(config.language),
       themeMode: themeMode,
       theme: _buildTheme(
-        ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.light),
+        ColorScheme.fromSeed(
+          seedColor: seedColor,
+          brightness: Brightness.light,
+        ),
       ),
       darkTheme: _buildTheme(
         ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.dark),
@@ -88,13 +91,13 @@ class App extends StatelessWidget {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
-      chipTheme: const ChipThemeData(
-        shape: StadiumBorder(),
-      ),
+      chipTheme: const ChipThemeData(shape: StadiumBorder()),
     );
   }
 
