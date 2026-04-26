@@ -366,8 +366,9 @@ class DufsService extends ChangeNotifier {
       _dufsFfi.load(libPath);
     }
     final args = _buildArgs(config);
+    final argv = ['dufs', ...args];
     _log('dufs ffi start: ${args.join(' ')}');
-    final ret = _dufsFfi.start(args);
+    final ret = _dufsFfi.start(argv);
     if (ret != 0) {
       _log('dufs FFI start returned $ret (failure)');
       throw Exception('dufs FFI start returned $ret');

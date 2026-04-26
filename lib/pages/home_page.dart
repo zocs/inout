@@ -44,6 +44,8 @@ class _HomePageState extends State<HomePage>
   late final TextEditingController _portController;
   int _navIndex = 0;
   bool _isDragOver = false;
+  bool _isServerTransitioning = false;
+  bool _isStoppingServer = false;
   static const _ch = MethodChannel('cc.merr.inout/native');
 
   AppLocalizations get l10n => AppLocalizations(_config.language);
@@ -143,11 +145,11 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _handleClose() async {
+    final service = context.read<DufsService>();
     final action = _config.closeAction;
     debugPrint('HomePage._handleClose: action=$action');
     if (action == 'exit') {
-      trayManager.destroy().catchError((_) {});
-      windowManager.destroy();
+      await _exitApp(service);
       return;
     }
     if (action == 'tray') {
@@ -163,8 +165,7 @@ class _HomePageState extends State<HomePage>
     if (actionResult == 'tray') {
       windowManager.hide();
     } else {
-      trayManager.destroy().catchError((_) {}); // fire and forget
-      windowManager.destroy();
+      await _exitApp(service);
     }
     if (dontAsk) {
       _config.closeAction = actionResult;
@@ -206,6 +207,20 @@ class _HomePageState extends State<HomePage>
         ),
       ),
     );
+  }
+
+  Future<void> _exitApp(DufsService service) async {
+    if (service.isRunning) {
+      await _runServerTransition(() async {
+        await service.stopServer();
+      }, stopping: true);
+    }
+    trayManager.destroy().catchError((_) {});
+    if (Theme.of(context).platform == TargetPlatform.android) {
+      if (mounted) SystemNavigator.pop();
+    } else {
+      await windowManager.destroy();
+    }
   }
 
   Future<void> _pickDirectory() async {
@@ -606,47 +621,120 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _restartServer(DufsService service) async {
-    await service.stopServer();
-    await _saveConfig();
-    if (_enableAuth && _config.auth == null) return;
-    await service.startServer(_config);
+    await _runServerTransition(() async {
+      await service.stopServer();
+      await _saveConfig();
+      if (_enableAuth && _config.auth == null) return;
+      await service.startServer(_config);
+    }, stopping: true);
+  }
+
+  Future<void> _runServerTransition(
+    Future<void> Function() action, {
+    required bool stopping,
+  }) async {
+    if (_isServerTransitioning) return;
+    setState(() {
+      _isServerTransitioning = true;
+      _isStoppingServer = stopping;
+    });
+    try {
+      await action();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isServerTransitioning = false;
+          _isStoppingServer = false;
+        });
+      }
+    }
   }
 
   // ==================== Start/Stop Button ====================
 
   Widget _buildControlButton(DufsService service) {
     final running = service.isRunning;
+    final busy = _isServerTransitioning;
+    final label = busy
+        ? (_isStoppingServer
+              ? l10n.t('home.stoppingServer')
+              : l10n.t('home.startingServer'))
+        : (running ? l10n.t('home.stopServer') : l10n.t('home.startServer'));
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: FilledButton.icon(
-        icon: Icon(running ? Icons.stop : Icons.play_arrow),
-        label: Text(
-          running ? l10n.t('home.stopServer') : l10n.t('home.startServer'),
-          style: const TextStyle(fontSize: 16),
-        ),
+        icon: busy
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2.4),
+              )
+            : Icon(running ? Icons.stop : Icons.play_arrow),
+        label: Text(label, style: const TextStyle(fontSize: 16)),
         style: FilledButton.styleFrom(
-          backgroundColor: running
+          backgroundColor: busy
+              ? Theme.of(context).colorScheme.secondary
+              : running
               ? Theme.of(context).colorScheme.error
               : Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        onPressed: () async {
-          if (running) {
-            await service.stopServer();
-          } else {
-            if (_enableAuth && _config.auth == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.t('home.authRequired'))),
-              );
-              return;
-            }
-            await _saveConfig();
-            await service.startServer(_config);
-          }
-        },
+        onPressed: busy
+            ? null
+            : () async {
+                if (running) {
+                  await _runServerTransition(
+                    () => service.stopServer(),
+                    stopping: true,
+                  );
+                } else {
+                  if (_enableAuth && _config.auth == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.t('home.authRequired'))),
+                    );
+                    return;
+                  }
+                  await _runServerTransition(() async {
+                    await _saveConfig();
+                    await service.startServer(_config);
+                  }, stopping: false);
+                }
+              },
+      ),
+    );
+  }
+
+  Widget _buildServerTransitionIndicator() {
+    if (!_isServerTransitioning) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.secondaryContainer.withValues(alpha: 0.65),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.t('home.transitionHint'),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: const LinearProgressIndicator(minHeight: 5),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1255,8 +1343,9 @@ class _HomePageState extends State<HomePage>
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _buildControlButton(service),
                 ),
+                _buildServerTransitionIndicator(),
                 // Restart hint
-                if (!service.isRunning)
+                if (!service.isRunning && !_isServerTransitioning)
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -1430,8 +1519,7 @@ class _HomePageState extends State<HomePage>
               ),
             );
             if (confirmed == true) {
-              await service.stopServer();
-              if (mounted) SystemNavigator.pop();
+              await _exitApp(service);
             }
           } else {
             // Server not running: double-press to exit
