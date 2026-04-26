@@ -333,7 +333,10 @@ class _HomePageState extends State<HomePage>
           ),
           backgroundColor: sel ? Theme.of(context).colorScheme.primary : null,
           onPressed: () async {
-            setState(() => _config.path = e.value);
+            setState(() {
+              _config.path = e.value;
+              _config.shareSingleFile = false;
+            });
             await _saveConfig();
           },
         );
