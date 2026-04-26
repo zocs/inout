@@ -28,8 +28,8 @@ RepoType: git
 Repo: https://github.com/zocs/inout
 
 Builds:
-  - versionName: 0.3.0
-    versionCode: 30
+  - versionName: 0.3.2
+    versionCode: 32
     commit: 3be86d42f5056e87b04b218ab768b7a3c4767619
     sudo:
       - apt-get update
@@ -52,12 +52,12 @@ Builds:
       - .pub-cache
     build:
       - export PUB_CACHE="$(pwd)/.pub-cache"
-      - $$flutter$$/bin/flutter build apk --release --build-name=0.2.8 --build-number=28
+      - $$flutter$$/bin/flutter build apk --release --build-name=0.3.2 --build-number=32
     ndk: r27
 
 AllowedAPKSigningKeys: e4db9054ff7070e4bee3387e928e1388facfec0526da10e4510282e9d26aed6a
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.3.0
-CurrentVersionCode: 30
+CurrentVersion: 0.3.2
+CurrentVersionCode: 32

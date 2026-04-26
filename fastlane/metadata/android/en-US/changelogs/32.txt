@@ -1,0 +1,1 @@
+Fix single-file sharing on desktop and Android, plus smoother start/stop transitions.

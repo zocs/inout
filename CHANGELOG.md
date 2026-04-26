@@ -3,6 +3,24 @@
 > 所有版本均可在 [GitHub Releases](https://github.com/zocs/inout/releases) 下载。
 > All versions available at [GitHub Releases](https://github.com/zocs/inout/releases).
 
+## [v0.3.2](https://github.com/zocs/inout/releases/tag/v0.3.2) (2026-04-27)
+
+**中文：**
+- 🐛 修复桌面端单文件分享在路径包含空格/中文/特殊字符时的 FFI 启动失败
+- 🐛 修复 Android 单文件分享后切换预置目录仍按单文件模式校验导致的 `File not found`
+- 🐛 修复 Android/桌面端单文件分享 working directory 处理错误
+- ✨ 启动/停止服务新增过渡态进度条与忙碌文案，降低等待卡顿感知
+- ✨ 退出前若需停止服务，关闭确认流程也复用同一套过渡反馈
+
+**English：**
+- 🐛 Fixed desktop single-file sharing startup failures when paths contain spaces, CJK text, or special characters
+- 🐛 Fixed Android preset directories still being validated as single-file paths after previous file sharing, causing `File not found`
+- 🐛 Fixed working-directory handling for single-file sharing on Android and desktop
+- ✨ Added transition progress feedback for server start/stop to reduce perceived stutter
+- ✨ Reused the same transition feedback when exiting while a running server must be stopped first
+
+---
+
 ## [v0.3.1](https://github.com/zocs/inout/releases/tag/v0.3.1) (2026-04-20)
 
 **中文：**
