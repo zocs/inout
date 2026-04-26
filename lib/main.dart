@@ -67,7 +67,8 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_trayInitialized && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    if (!_trayInitialized &&
+        (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
       _trayInitialized = true;
       _initTray();
     }
@@ -95,12 +96,14 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
       // Small delay before setting context menu (Windows needs icon to be registered first)
       await Future.delayed(const Duration(milliseconds: 200));
 
-      await trayManager.setContextMenu(Menu(
-        items: [
-          MenuItem(key: 'show', label: 'Show'),
-          MenuItem(key: 'quit', label: 'Quit'),
-        ],
-      ));
+      await trayManager.setContextMenu(
+        Menu(
+          items: [
+            MenuItem(key: 'show', label: 'Show'),
+            MenuItem(key: 'quit', label: 'Quit'),
+          ],
+        ),
+      );
       trayManager.addListener(this);
       debugPrint('Tray initialized successfully');
     } catch (e) {
@@ -182,6 +185,7 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
       _themeMode = mode;
       widget.config.themeMode = mode.name;
     });
+    widget.config.save();
   }
 
   void _onColorChanged(String scheme) {
@@ -189,6 +193,7 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
       _colorScheme = scheme;
       widget.config.colorScheme = scheme;
     });
+    widget.config.save();
   }
 
   void _onSetupDone() {

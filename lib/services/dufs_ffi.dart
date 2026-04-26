@@ -5,12 +5,13 @@ import 'dart:io';
 import 'package:ffi/ffi.dart';
 
 // C function signatures
-typedef DufsStartNative = Int32 Function(Pointer<Utf8> args);
+typedef DufsStartNative =
+    Int32 Function(Int32 argc, Pointer<Pointer<Utf8>> argv);
 typedef DufsStopNative = Void Function();
 typedef DufsIsRunningNative = Int32 Function();
 
 // Dart function signatures
-typedef DufsStart = int Function(Pointer<Utf8> args);
+typedef DufsStart = int Function(int argc, Pointer<Pointer<Utf8>> argv);
 typedef DufsStop = void Function();
 typedef DufsIsRunning = int Function();
 
@@ -25,18 +26,30 @@ class DufsFfi {
     _lib = DynamicLibrary.open(libPath);
     _start = _lib!.lookupFunction<DufsStartNative, DufsStart>('dufs_start');
     _stop = _lib!.lookupFunction<DufsStopNative, DufsStop>('dufs_stop');
-    _isRunning = _lib!.lookupFunction<DufsIsRunningNative, DufsIsRunning>('dufs_is_running');
+    _isRunning = _lib!.lookupFunction<DufsIsRunningNative, DufsIsRunning>(
+      'dufs_is_running',
+    );
   }
 
-  /// Start the dufs server with CLI-style args.
+  /// Start the dufs server with an argv array.
   /// Returns 0 on success, -1 on error.
-  int start(String args) {
+  int start(List<String> args) {
     if (_start == null) throw StateError('DufsFfi not loaded');
-    final ptr = args.toNativeUtf8();
+    final argc = args.length;
+    final argv = calloc<Pointer<Utf8>>(argc);
+    final owned = <Pointer<Utf8>>[];
     try {
-      return _start!(ptr);
+      for (var i = 0; i < argc; i++) {
+        final ptr = args[i].toNativeUtf8();
+        owned.add(ptr);
+        argv[i] = ptr;
+      }
+      return _start!(argc, argv);
     } finally {
-      malloc.free(ptr);
+      for (final ptr in owned) {
+        malloc.free(ptr);
+      }
+      calloc.free(argv);
     }
   }
 
@@ -59,7 +72,9 @@ class DufsFfi {
 Future<String> resolveDufsLibPath() async {
   if (Platform.isLinux) {
     // In AppImage, extract to /tmp to avoid FUSE isolation
-    final exeDir = Directory.fromUri(Uri.file(Platform.resolvedExecutable)).parent.path;
+    final exeDir = Directory.fromUri(
+      Uri.file(Platform.resolvedExecutable),
+    ).parent.path;
     final libPath = '$exeDir/libdufs.so';
     if (exeDir.contains('.mount_')) {
       // Running inside AppImage — extract to /tmp
@@ -71,12 +86,18 @@ Future<String> resolveDufsLibPath() async {
     }
     return libPath;
   } else if (Platform.isMacOS) {
-    final exeDir = Directory.fromUri(Uri.file(Platform.resolvedExecutable)).parent.path;
+    final exeDir = Directory.fromUri(
+      Uri.file(Platform.resolvedExecutable),
+    ).parent.path;
     return '$exeDir/libdufs.dylib';
   } else if (Platform.isWindows) {
     // Windows: extract from asset to app data dir
-    final exeDir = Directory.fromUri(Uri.file(Platform.resolvedExecutable)).parent.path;
+    final exeDir = Directory.fromUri(
+      Uri.file(Platform.resolvedExecutable),
+    ).parent.path;
     return '$exeDir/dufs.dll';
   }
-  throw UnsupportedError('Platform not supported for FFI: ${Platform.operatingSystem}');
+  throw UnsupportedError(
+    'Platform not supported for FFI: ${Platform.operatingSystem}',
+  );
 }

@@ -42,21 +42,30 @@ static RUNNING: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 static RUNTIME: Mutex<Option<Runtime>> = Mutex::new(None);
 static SHUTDOWN_TX: Mutex<Option<broadcast::Sender<()>>> = Mutex::new(None);
 
-/// Start the dufs server with CLI-style args string (e.g. "-b 0.0.0.0 -p 5000 /path").
+/// Start the dufs server with argv-style args.
 /// Returns 0 on success, -1 on error.
 #[no_mangle]
-pub extern "C" fn dufs_start(args_ptr: *const c_char) -> i32 {
-    let args_str = unsafe {
-        if args_ptr.is_null() {
+pub extern "C" fn dufs_start(argc: i32, argv: *const *const c_char) -> i32 {
+    let argv_vec = unsafe {
+        if argc < 0 || argv.is_null() {
             return -1;
         }
-        match CStr::from_ptr(args_ptr).to_str() {
-            Ok(s) => s.to_owned(),
-            Err(_) => return -1,
+        let argc = argc as isize;
+        let mut out = Vec::with_capacity(argc as usize);
+        for i in 0..argc {
+            let ptr = *argv.offset(i);
+            if ptr.is_null() {
+                return -1;
+            }
+            match CStr::from_ptr(ptr).to_str() {
+                Ok(s) => out.push(s.to_owned()),
+                Err(_) => return -1,
+            }
         }
+        out
     };
 
-    match start_inner(&args_str) {
+    match start_inner(&argv_vec) {
         Ok(_) => 0,
         Err(e) => {
             eprintln!("[dufs-ffi] Failed to start: {e}");
@@ -105,7 +114,7 @@ pub extern "C" fn dufs_is_running() -> i32 {
     0
 }
 
-fn start_inner(args_str: &str) -> Result<()> {
+fn start_inner(argv: &[String]) -> Result<()> {
     // Prevent double-start: if a server is already running, stop it first
     {
         let running_guard = RUNNING.lock().map_err(|_| anyhow!("RUNNING lock poisoned"))?;
@@ -117,13 +126,8 @@ fn start_inner(args_str: &str) -> Result<()> {
         }
     }
 
-    // Build argv from args string
-    let argv: Vec<String> = std::iter::once("dufs".to_owned())
-        .chain(args_str.split_whitespace().map(|s| s.to_owned()))
-        .collect();
-
     let cmd = build_cli();
-    let matches = cmd.try_get_matches_from(&argv).map_err(|e| anyhow!("{e}"))?;
+    let matches = cmd.try_get_matches_from(argv).map_err(|e| anyhow!("{e}"))?;
 
     let mut args = Args::parse(matches)?;
     logger::init(args.log_file.clone()).map_err(|e| anyhow!("Failed to init logger, {e}"))?;
