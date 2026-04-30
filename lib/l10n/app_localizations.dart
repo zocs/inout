@@ -68,6 +68,7 @@ class AppLocalizations {
       'log.title': '传输记录',
       'log.clear': '清空',
       'log.empty': '暂无传输记录',
+      'log.copyPath': '已复制路径',
       'perm.restartTitle': '确认重启服务',
       'perm.restartMsg': '检测到当前有活跃连接，切换权限将重启服务，可能导致正在传输的任务中断。确定继续？',
       'perm.restart': '重启',
@@ -166,6 +167,7 @@ class AppLocalizations {
       'log.title': 'Transfer Log',
       'log.clear': 'Clear',
       'log.empty': 'No transfer records yet',
+      'log.copyPath': 'Path Copied',
       'perm.restartTitle': 'Confirm Restart',
       'perm.restartMsg':
           'Active connections detected. Changing permissions will restart the server and may interrupt ongoing transfers. Continue?',
@@ -262,6 +264,7 @@ class AppLocalizations {
       'log.title': '傳輸記錄',
       'log.clear': '清空',
       'log.empty': '暫無傳輸記錄',
+      'log.copyPath': '已複製路徑',
       'perm.restartTitle': '確認重啟服務',
       'perm.restartMsg': '偵測到目前有活躍連線，切換權限將重啟服務，可能導致正在傳輸的任務中斷。確定繼續？',
       'perm.restart': '重啟',
