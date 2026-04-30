@@ -91,9 +91,21 @@ case "$PLATFORM" in
     cat > .cargo/config.toml << EOF
 [target.aarch64-linux-android]
 linker = "${LINKER}"
-# Belt-and-suspenders: forbid DT_RELR packed relocations even if a future lld
-# default changes. --pack-dyn-relocs=none ≥ API 23 compatible unconditionally.
-rustflags = ["-C", "link-arg=-Wl,--pack-dyn-relocs=none"]
+# Three belt-and-suspenders linker flags for Android compat with NDK r28+:
+# 1. --pack-dyn-relocs=none: forbid DT_RELR packed relocations (only API 30+
+#    linkers understand them; older devices crash SEGV_MAPERR on first PLT
+#    call).
+# 2/3. -z max-page-size=0x1000 + -z common-page-size=0x1000: force 4KB page
+#    alignment. NDK r28 changed the default to 16KB (0x4000) for Android 15+
+#    page-size readiness; on devices < API 35 a 16KB-aligned binary loads via
+#    a compat path but networking syscalls misbehave (process stays alive but
+#    never bind()s a port) — observed as "dufs did not start listening on
+#    port N" with empty stderr.
+rustflags = [
+  "-C", "link-arg=-Wl,--pack-dyn-relocs=none",
+  "-C", "link-arg=-Wl,-z,max-page-size=0x1000",
+  "-C", "link-arg=-Wl,-z,common-page-size=0x1000",
+]
 EOF
 
     export CC="${LINKER}"
