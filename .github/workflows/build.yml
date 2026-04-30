@@ -1,4 +1,4 @@
-﻿name: Build & Release
+name: Build & Release
 
 on:
   push:
@@ -10,9 +10,27 @@ permissions:
   contents: write
 
 env:
+  FLUTTER_VERSION: '3.41.5'
+  # Bump after verifying ABI compat (esp. page-alignment on devices < API 35).
+  EXPECTED_NDK_MAJOR: '28'
+  # Android dynamic linker on devices < API 35 mishandles 16KB-aligned LOAD
+  # segments. scripts/build_dufs.sh android-arm64 forces 0x1000 via
+  # -Wl,-z,max-page-size=0x1000; this guard catches drift.
+  ANDROID_LIBDUFS_ALIGN: '0x1000'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  lint:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - run: flutter pub get
+      - run: flutter analyze
+
   build-android:
     name: Android
     runs-on: ubuntu-latest
@@ -27,7 +45,7 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.5'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -37,16 +55,43 @@ jobs:
           key: cargo-aarch64-linux-android-${{ hashFiles('scripts/build_dufs.sh') }}
           restore-keys: |
             cargo-aarch64-linux-android-
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
-      - name: Compile dufs from source
+      - name: Resolve and check NDK version
         run: |
-          NDK=$(find "$ANDROID_HOME/ndk" -maxdepth 1 -type d | sort -V | tail -1)
-          echo "NDK found at: $NDK"
-          export ANDROID_NDK_HOME="$NDK"
-          bash scripts/build_dufs.sh android-arm64
+          NDK_DIR=$(find "$ANDROID_HOME/ndk" -maxdepth 1 -type d -name '[0-9]*' | sort -V | tail -1)
+          NDK_VERSION=$(basename "$NDK_DIR")
+          echo "NDK found: $NDK_VERSION at $NDK_DIR"
+          NDK_MAJOR=${NDK_VERSION%%.*}
+          if [ "$NDK_MAJOR" != "${{ env.EXPECTED_NDK_MAJOR }}" ]; then
+            echo "::warning::NDK major $NDK_MAJOR (got $NDK_VERSION) differs from expected ${{ env.EXPECTED_NDK_MAJOR }}. Bump EXPECTED_NDK_MAJOR after confirming ABI compat (especially page alignment on devices < API 35)."
+          fi
+          echo "ANDROID_NDK_HOME=$NDK_DIR" >> $GITHUB_ENV
+      - name: Compile dufs from source
+        run: bash scripts/build_dufs.sh android-arm64
+      - name: Verify libdufs.so page alignment
+        run: |
+          SO=android/app/src/main/jniLibs/arm64-v8a/libdufs.so
+          [ -f "$SO" ] || { echo "::error::missing $SO"; exit 1; }
+          BAD=$(readelf -lW "$SO" | awk '/^  LOAD/ {print $NF}' | sort -u | grep -vF "${{ env.ANDROID_LIBDUFS_ALIGN }}" || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::libdufs.so LOAD alignment != ${{ env.ANDROID_LIBDUFS_ALIGN }}: got $BAD"
+            echo "::error::Older Android (< API 35) dynamic linker mishandles 16KB-aligned binaries -> dufs binds but networking syscalls misbehave."
+            echo "::error::Check scripts/build_dufs.sh android-arm64 has -Wl,-z,max-page-size=${{ env.ANDROID_LIBDUFS_ALIGN }}."
+            exit 1
+          fi
+          echo "OK: libdufs.so all LOAD segments aligned to ${{ env.ANDROID_LIBDUFS_ALIGN }}"
       - name: Decode Keystore
         if: env.KEYSTORE_BASE64 != ''
         env:
@@ -78,7 +123,7 @@ jobs:
         run: echo "VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}' | awk -F'+' '{print $1}')" >> $GITHUB_ENV
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.5'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -121,7 +166,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.5'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -153,7 +198,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Flutter manually
         run: |
-          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$HOME/flutter"
+          git clone --depth 1 --branch ${{ env.FLUTTER_VERSION }} https://github.com/flutter/flutter.git "$HOME/flutter" || \
+            git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$HOME/flutter"
           export PATH="$HOME/flutter/bin:$HOME/flutter/bin/cache/dart-sdk/bin:$PATH"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
           echo "$HOME/flutter/bin/cache/dart-sdk/bin" >> "$GITHUB_PATH"
@@ -192,7 +238,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.5'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -220,7 +266,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.5'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - name: Cache cargo
         uses: actions/cache@v4
         with:
