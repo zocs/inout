@@ -47,8 +47,9 @@ class DufsService extends ChangeNotifier {
   void _log(String msg) {
     debugPrint(msg);
     // ignore: body_might_complete_normally_catch_error
-    if (Platform.isAndroid)
+    if (Platform.isAndroid) {
       _ch.invokeMethod('log', {'msg': msg}).catchError((_) {});
+    }
   }
 
   Future<String?> _getWifiIP() async {
@@ -189,17 +190,19 @@ class DufsService extends ChangeNotifier {
     }
   }
 
-  Future<void> startServer(ServerConfig config) async {
-    if (_isRunning) return;
-    // Set up log file path
+  Future<void> _prepareLogFile() async {
     final tmpDir = await getTemporaryDirectory();
     _logFilePath = '${tmpDir.path}/inout_dufs.log';
-    // Clear previous log file
     try {
       await File(_logFilePath!).writeAsString('');
     } catch (_) {}
     _logFilePosition = 0;
     _logFileRemainder = '';
+  }
+
+  Future<void> startServer(ServerConfig config) async {
+    if (_isRunning) return;
+    await _prepareLogFile();
     if (config.path.isEmpty) {
       _error = 'No directory';
       notifyListeners();
@@ -330,14 +333,16 @@ class DufsService extends ChangeNotifier {
       if (c.allowArchive) args.add('--allow-archive');
       if (c.allowSymlink) args.add('--allow-symlink');
     }
-    if (c.auth != null && c.auth!.isNotEmpty)
+    if (c.auth != null && c.auth!.isNotEmpty) {
       args.addAll(['--auth', '${c.auth!}@/:rw']);
+    }
     if (c.cors) args.add('--enable-cors');
-    if (c.hideSystemFiles)
+    if (c.hideSystemFiles) {
       args.addAll([
         '--hidden',
         '.git,.DS_Store,Thumbs.db,.env,.idea,.vscode,__pycache__,.svn,.hg',
       ]);
+    }
     if (c.renderTryIndex) args.add('--render-try-index');
     // Write HTTP logs to a temp file so we can read them on all platforms
     if (_logFilePath != null) args.addAll(['--log-file', _logFilePath!]);
@@ -423,13 +428,17 @@ class DufsService extends ChangeNotifier {
     final path = entry.path;
     if (path == '/' || path.isEmpty) return false;
     if (path.endsWith('/')) return false;
-    if (path.endsWith('.css') || path.endsWith('.js') || path.endsWith('.ico'))
+    if (path.endsWith('.css') ||
+        path.endsWith('.js') ||
+        path.endsWith('.ico')) {
       return false;
+    }
     if (path.contains('/dufs-assets/')) return false;
     if (entry.method == 'MKCOL' ||
         entry.method == 'OPTIONS' ||
-        entry.method == 'PROPFIND')
+        entry.method == 'PROPFIND') {
       return false;
+    }
     if (entry.isDownload && !path.contains('.')) return false;
     return entry.isDownload || entry.isUpload || entry.isDelete;
   }
@@ -526,6 +535,10 @@ class DufsService extends ChangeNotifier {
       final info = await _ch.invokeMethod<Map>('getServiceInfo');
       if (info != null && info['isRunning'] == true) {
         final port = info['port'] as int? ?? 0;
+        await _prepareLogFile();
+        _totalRequests = 0;
+        _lastActivity = null;
+        _transferLogs.clear();
         _localIp = await _getWifiIP();
         final allNet = await _getAllAddresses();
         _allAddresses = allNet['addresses'] ?? [];
@@ -546,6 +559,7 @@ class DufsService extends ChangeNotifier {
         }
         _serverUrl = 'http://${_allAddresses.first}:$port';
         _isRunning = true;
+        _startLogFilePolling();
         _log('restored from native service: $_serverUrl');
         notifyListeners();
       }

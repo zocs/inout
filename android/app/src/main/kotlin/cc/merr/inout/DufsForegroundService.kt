@@ -6,6 +6,8 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import java.io.File
+import java.net.InetSocketAddress
+import java.net.Socket
 
 class DufsForegroundService : Service() {
 
@@ -49,21 +51,16 @@ class DufsForegroundService : Service() {
         }
 
         synchronized(startLock) {
-            // Already running with same config — no-op
             if (isRunning && port == currentPort && path == currentPath) {
                 Log.d(TAG, "Already running on port=$port, skip")
                 return START_STICKY
             }
 
-            // Kill existing process if any
             killDufs()
 
-            // IMPORTANT: call startForeground() immediately to avoid Android timeout exception
-            // This must happen BEFORE any blocking operations (like starting dufs)
             val notification = buildNotification(port, path)
             startForeground(NOTIFICATION_ID, notification)
 
-            // Start new process (order matters: process first, state after)
             lastError = null
             val success = startDufs(port, path, args)
             if (!success) {
@@ -73,7 +70,6 @@ class DufsForegroundService : Service() {
                 return START_NOT_STICKY
             }
 
-            // Process started successfully — now update state
             currentPort = port
             currentPath = path
             isRunning = true
@@ -83,10 +79,6 @@ class DufsForegroundService : Service() {
         }
     }
 
-    /**
-     * Start dufs process in a background thread with startup verification.
-     * Returns true if process is alive after verification.
-     */
     private fun startDufs(port: Int, path: String, args: Array<String>): Boolean {
         return try {
             val nativeLibDir = applicationInfo.nativeLibraryDir
@@ -103,30 +95,27 @@ class DufsForegroundService : Service() {
 
             val pb = ProcessBuilder(fullArgs)
             pb.directory(workingDir)
-            // Redirect stderr to a log file for debugging
-            val errLog = java.io.File(cacheDir, "dufs_stderr.log")
+            val errLog = java.io.File(externalCacheDir ?: cacheDir, "dufs_stderr.log")
+            val outLog = java.io.File(externalCacheDir ?: cacheDir, "dufs_stdout.log")
             pb.redirectErrorStream(false)
             pb.redirectError(errLog)
+            pb.redirectOutput(outLog)
             dufsProcess = pb.start()
 
-            // Startup verification: wait 300ms then check if process is still alive
-            Thread.sleep(300)
-            val alive = try {
-                dufsProcess?.exitValue()
-                false // exitValue() didn't throw = process has exited
-            } catch (e: IllegalThreadStateException) {
-                true // thrown = process still running
-            }
-
-            if (!alive) {
-                // Read stderr for error details
+            val ready = waitForServerReady(port)
+            if (!ready) {
                 val errOutput = try { errLog.readText().take(500) } catch (_: Exception) { "" }
-                lastError = "dufs process exited immediately${if (errOutput.isNotEmpty()) ": $errOutput" else ""}"
+                val alive = isProcessAlive()
+                lastError = if (!alive) {
+                    "dufs process exited during startup${if (errOutput.isNotEmpty()) ": $errOutput" else ""}"
+                } else {
+                    "dufs did not start listening on port $port${if (errOutput.isNotEmpty()) ": $errOutput" else ""}"
+                }
                 Log.e(TAG, lastError ?: "")
-                dufsProcess = null
+                killDufs()
                 false
             } else {
-                Log.d(TAG, "dufs verified alive on port=$port")
+                Log.d(TAG, "dufs verified listening on port=$port")
                 true
             }
         } catch (e: Exception) {
@@ -137,10 +126,50 @@ class DufsForegroundService : Service() {
         }
     }
 
+    private fun waitForServerReady(port: Int): Boolean {
+        // Socket.connect() on the main thread throws NetworkOnMainThreadException
+        // (Android API 11+ StrictMode). onStartCommand runs on main, so we offload
+        // the whole probe loop to a worker and block here on the result.
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        return try {
+            executor.submit<Boolean> {
+                repeat(10) {
+                    if (!isProcessAlive()) return@submit false
+                    if (canConnectToPort(port)) return@submit true
+                    Thread.sleep(200)
+                }
+                canConnectToPort(port)
+            }.get(5, java.util.concurrent.TimeUnit.SECONDS)
+        } catch (_: Exception) {
+            false
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    private fun isProcessAlive(): Boolean {
+        return try {
+            dufsProcess?.exitValue()
+            false
+        } catch (e: IllegalThreadStateException) {
+            true
+        }
+    }
+
+    private fun canConnectToPort(port: Int): Boolean {
+        return try {
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress("127.0.0.1", port), 200)
+                true
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun killDufs() {
         try {
             dufsProcess?.destroy()
-            // Force kill on Android 8+ if destroy() didn't work
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 try { dufsProcess?.destroyForcibly() } catch (_: Exception) {}
             }
