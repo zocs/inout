@@ -48,6 +48,7 @@ dependencies:
   desktop_drop: ^0.7.0
   tray_manager: ^0.5.2
   ffi: ^2.1.4
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:

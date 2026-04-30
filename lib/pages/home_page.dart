@@ -132,16 +132,16 @@ class _HomePageState extends State<HomePage>
   bool _serverWasRunning = false;
 
   Future<void> _saveConfig() async {
-    if (_enableAuth) {
-      final user = _usernameController.text.trim();
-      final pass = _passwordController.text.trim();
-      _config.auth = (user.isNotEmpty && pass.isNotEmpty)
-          ? '$user:$pass'
-          : null;
-    } else {
-      _config.auth = null;
-    }
+    _config.auth = _buildAuth();
     await _config.save();
+  }
+
+  String? _buildAuth() {
+    if (!_enableAuth) return null;
+    final user = _usernameController.text.trim();
+    final pass = _passwordController.text.trim();
+    if (user.isEmpty || pass.isEmpty) return null;
+    return '$user:$pass';
   }
 
   Future<void> _handleClose() async {
@@ -216,8 +216,9 @@ class _HomePageState extends State<HomePage>
       }, stopping: true);
     }
     trayManager.destroy().catchError((_) {});
+    if (!mounted) return;
     if (Theme.of(context).platform == TargetPlatform.android) {
-      if (mounted) SystemNavigator.pop();
+      SystemNavigator.pop();
     } else {
       await windowManager.destroy();
     }
@@ -305,8 +306,9 @@ class _HomePageState extends State<HomePage>
   // ==================== Preset Dirs (Android) ====================
 
   Widget _buildPresetDirs() {
-    if (Theme.of(context).platform != TargetPlatform.android)
+    if (Theme.of(context).platform != TargetPlatform.android) {
       return const SizedBox.shrink();
+    }
     const presets = {
       'Download': '/storage/emulated/0/Download',
       'Documents': '/storage/emulated/0/Documents',
@@ -745,8 +747,9 @@ class _HomePageState extends State<HomePage>
   // ==================== Running Card (QR + Stats) ====================
 
   Widget _buildRunningCard(DufsService service) {
-    if (!service.isRunning || service.serverUrl == null)
+    if (!service.isRunning || service.serverUrl == null) {
       return const SizedBox.shrink();
+    }
     return Card(
       color: Theme.of(context).colorScheme.primaryContainer,
       child: Padding(

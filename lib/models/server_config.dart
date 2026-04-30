@@ -1,9 +1,13 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 服务器配置数据模型
 /// 包含 dufs 服务启动所需的全部参数
 class ServerConfig {
+  static const _secureStorage = FlutterSecureStorage();
+  static const _authStorageKey = 'server_auth';
+
   /// 分享目录路径
   String path;
 
@@ -81,62 +85,73 @@ class ServerConfig {
 
   /// 转为 JSON Map
   Map<String, dynamic> toJson() => {
-        'path': path,
-        'port': port,
-        'allowUpload': allowUpload,
-        'allowDelete': allowDelete,
-        'allowSearch': allowSearch,
-        'allowArchive': allowArchive,
-        'allowSymlink': allowSymlink,
-        'readonly': readonly,
-        'auth': auth,
-        'cors': cors,
-        'language': language,
-        'themeMode': themeMode,
-        'colorScheme': colorScheme,
-        'setupDone': setupDone,
-        'closeAction': closeAction,
-        'shareSingleFile': shareSingleFile,
-        'hideSystemFiles': hideSystemFiles,
-        'renderTryIndex': renderTryIndex,
-      };
+    'path': path,
+    'port': port,
+    'allowUpload': allowUpload,
+    'allowDelete': allowDelete,
+    'allowSearch': allowSearch,
+    'allowArchive': allowArchive,
+    'allowSymlink': allowSymlink,
+    'readonly': readonly,
+    'cors': cors,
+    'language': language,
+    'themeMode': themeMode,
+    'colorScheme': colorScheme,
+    'setupDone': setupDone,
+    'closeAction': closeAction,
+    'shareSingleFile': shareSingleFile,
+    'hideSystemFiles': hideSystemFiles,
+    'renderTryIndex': renderTryIndex,
+  };
 
   /// 从 JSON Map 创建实例
   factory ServerConfig.fromJson(Map<String, dynamic> json) => ServerConfig(
-        path: json['path'] as String? ?? '',
-        port: json['port'] as int? ?? 5000,
-        allowUpload: json['allowUpload'] as bool? ?? false,
-        allowDelete: json['allowDelete'] as bool? ?? false,
-        allowSearch: json['allowSearch'] as bool? ?? false,
-        allowArchive: json['allowArchive'] as bool? ?? false,
-        allowSymlink: json['allowSymlink'] as bool? ?? false,
-        readonly: json['readonly'] as bool? ?? true,
-        auth: json['auth'] as String?,
-        cors: json['cors'] as bool? ?? false,
-        language: json['language'] as String? ?? 'zh',
-        themeMode: json['themeMode'] as String? ?? 'system',
-        colorScheme: json['colorScheme'] as String? ?? 'coral',
-        setupDone: json['setupDone'] as bool? ?? false,
-        closeAction: json['closeAction'] as String? ?? 'ask',
-        shareSingleFile: json['shareSingleFile'] as bool? ?? false,
-        hideSystemFiles: json['hideSystemFiles'] as bool? ?? true,
-        renderTryIndex: json['renderTryIndex'] as bool? ?? false,
-      );
+    path: json['path'] as String? ?? '',
+    port: json['port'] as int? ?? 5000,
+    allowUpload: json['allowUpload'] as bool? ?? false,
+    allowDelete: json['allowDelete'] as bool? ?? false,
+    allowSearch: json['allowSearch'] as bool? ?? false,
+    allowArchive: json['allowArchive'] as bool? ?? false,
+    allowSymlink: json['allowSymlink'] as bool? ?? false,
+    readonly: json['readonly'] as bool? ?? true,
+    cors: json['cors'] as bool? ?? false,
+    language: json['language'] as String? ?? 'zh',
+    themeMode: json['themeMode'] as String? ?? 'system',
+    colorScheme: json['colorScheme'] as String? ?? 'coral',
+    setupDone: json['setupDone'] as bool? ?? false,
+    closeAction: json['closeAction'] as String? ?? 'ask',
+    shareSingleFile: json['shareSingleFile'] as bool? ?? false,
+    hideSystemFiles: json['hideSystemFiles'] as bool? ?? true,
+    renderTryIndex: json['renderTryIndex'] as bool? ?? false,
+  );
 
   /// 从 SharedPreferences 加载配置
   static Future<ServerConfig> load() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonStr = prefs.getString('server_config');
-    if (jsonStr != null) {
-      return ServerConfig.fromJson(jsonDecode(jsonStr));
+    final json = jsonStr != null
+        ? jsonDecode(jsonStr) as Map<String, dynamic>
+        : null;
+    final config = json != null ? ServerConfig.fromJson(json) : ServerConfig();
+    final legacyAuth = json?['auth'] as String?;
+    final secureAuth = await _secureStorage.read(key: _authStorageKey);
+    config.auth = secureAuth ?? legacyAuth;
+    if (legacyAuth != null && legacyAuth.isNotEmpty) {
+      await _secureStorage.write(key: _authStorageKey, value: legacyAuth);
+      await prefs.setString('server_config', jsonEncode(config.toJson()));
     }
-    return ServerConfig();
+    return config;
   }
 
   /// 保存配置到 SharedPreferences
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('server_config', jsonEncode(toJson()));
+    if (auth == null || auth!.isEmpty) {
+      await _secureStorage.delete(key: _authStorageKey);
+      return;
+    }
+    await _secureStorage.write(key: _authStorageKey, value: auth!);
   }
 
   /// 权限预设: 只读
