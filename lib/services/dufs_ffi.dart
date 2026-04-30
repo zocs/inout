@@ -3,6 +3,7 @@
 import 'dart:ffi';
 import 'dart:io';
 import 'package:ffi/ffi.dart';
+import 'package:path/path.dart' as p;
 
 // C function signatures
 typedef DufsStartNative =
@@ -71,16 +72,21 @@ class DufsFfi {
 /// Resolve the path to the dufs shared library for the current platform.
 Future<String> resolveDufsLibPath() async {
   if (Platform.isLinux) {
-    // In AppImage, extract to /tmp to avoid FUSE isolation
+    // In AppImage, extract to a unique temp path to avoid FUSE isolation and stale reuse
     final exeDir = Directory.fromUri(
       Uri.file(Platform.resolvedExecutable),
     ).parent.path;
     final libPath = '$exeDir/libdufs.so';
     if (exeDir.contains('.mount_')) {
-      // Running inside AppImage — extract to /tmp
-      final tmpLib = '/tmp/inout-libdufs.so';
-      if (!await File(tmpLib).exists()) {
-        await File(libPath).copy(tmpLib);
+      final sourceFile = File(libPath);
+      final stat = await sourceFile.stat();
+      final tmpLib = p.join(
+        Directory.systemTemp.path,
+        'inout-libdufs-${stat.modified.millisecondsSinceEpoch}-$pid.so',
+      );
+      final tmpFile = File(tmpLib);
+      if (!await tmpFile.exists()) {
+        await sourceFile.copy(tmpLib);
       }
       return tmpLib;
     }

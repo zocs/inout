@@ -74,7 +74,7 @@ cat > "${APPDIR}/AppRun" << 'APPRUN'
 #!/bin/bash
 SELF=$(readlink -f "$0")
 HERE="${SELF%/*}"
-export LD_LIBRARY_PATH="${HERE}/usr/bin/lib:${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/bin/lib:${LD_LIBRARY_PATH}"
 exec "${HERE}/usr/bin/inout" "$@"
 APPRUN
 chmod +x "${APPDIR}/AppRun"
@@ -89,6 +89,8 @@ fi
 # Use linuxdeploy for AppImage creation
 export ARCH=${LINUXDEPLOY_ARCH}
 export OUTPUT="${OUTPUT_DIR}/${ARCHIVE_NAME}.AppImage"
+export NO_STRIP=true
+export APPIMAGE_EXTRACT_AND_RUN=1
 /tmp/linuxdeploy --appdir "${APPDIR}" --output appimage
 echo "Created: ${OUTPUT}"
 
