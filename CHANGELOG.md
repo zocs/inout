@@ -3,6 +3,30 @@
 > 所有版本均可在 [GitHub Releases](https://github.com/zocs/inout/releases) 下载。
 > All versions available at [GitHub Releases](https://github.com/zocs/inout/releases).
 
+## [v0.3.3](https://github.com/zocs/inout/releases/tag/v0.3.3) (2026-05-01)
+
+**中文：**
+- 🐛 修复 Android < 15 设备点击启动后立即报"服务启动失败：dufs did not start listening on port 5000"——NDK r28 默认 16KB 页对齐让旧设备 dynamic linker bind() 异常 + 服务主线程上 `Socket.connect()` 被 `NetworkOnMainThreadException` 静默吞掉，两个 bug 叠加把已经在 listen 的 dufs 误报为启动失败
+- 🐛 修复 AppImage 升级后偶发使用旧版本 libdufs 的提取冲突（提取路径加 mtime+pid 唯一化）
+- ✨ 端口冲突自动恢复：5000 被占时先尝试接管同 user 的残留 dufs/inout 进程；接管不了则自动切到 5001+，UI SnackBar 提示
+- ✨ Auth 凭据从 SharedPreferences 迁移到平台 keychain（flutter_secure_storage）
+- ✨ 传输日志条目支持点击复制完整路径
+- 🏗️ 新增 Docker 化本地构建支持（Linux x64 + Android arm64），与 CI 行为对齐
+- 🏗️ CI 加入 libdufs.so 4KB 页对齐 hard guard、Gradle cache、独立 `flutter analyze` job
+- 🏗️ Flutter 升级到 3.41.5；编译器升级到 NDK r28，但强制 4KB 页对齐保留对 Android 7.0+ 的全部兼容
+
+**English：**
+- 🐛 Fixed Android < 15 devices reporting "service failed to start: dufs did not start listening on port 5000" right after tapping Start. Two stacked bugs: NDK r28 changed default LOAD-segment alignment to 16KB which the dynamic linker on older Android mishandles, and the new socket-connect probe silently swallowed `NetworkOnMainThreadException` because it ran on the foreground service's main thread — leaving an actually-listening dufs reported as failed
+- 🐛 Fixed AppImage upgrade occasionally reusing a stale extracted libdufs binary (extraction path now embeds mtime+pid)
+- ✨ Auto port-conflict recovery: when :5000 is busy, app first tries to reclaim a leftover dufs/inout process owned by the same user; otherwise bumps to :5001+ and surfaces a SnackBar notice
+- ✨ Auth credentials moved from SharedPreferences to the platform keychain (flutter_secure_storage)
+- ✨ Tap a transfer-log entry to copy its full path to the clipboard
+- 🏗️ Added Dockerized local builds for Linux x64 and Android arm64 (`scripts/docker_build_*.sh`) mirroring CI behavior
+- 🏗️ CI gained a hard libdufs.so 4KB page-alignment guard, Gradle cache, and a standalone `flutter analyze` job
+- 🏗️ Flutter bumped to 3.41.5; toolchain bumped to NDK r28 but forced back to 4KB page alignment so support down to Android 7.0+ is preserved
+
+---
+
 ## [v0.3.2](https://github.com/zocs/inout/releases/tag/v0.3.2) (2026-04-27)
 
 **中文：**
