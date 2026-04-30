@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ARCH=${1:-x86_64}
 VERSION=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}' | awk -F'+' '{print $1}')
 APP_NAME="inout"
+BUILD_ROOT="${INOUT_BUILD_ROOT:-build}"
+OUTPUT_DIR="${INOUT_OUTPUT_DIR:-${BUILD_ROOT}/linux/output}"
 
 # Architecture mapping
 DEB_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "amd64")
@@ -28,8 +30,7 @@ flutter build linux --release
 
 # Flutter outputs to build/linux/{x64|arm64}/release/bundle
 FLUTTER_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x64")
-BUILD_DIR="build/linux/${FLUTTER_ARCH}/release/bundle"
-OUTPUT_DIR="build/linux/output"
+BUILD_DIR="${BUILD_ROOT}/linux/${FLUTTER_ARCH}/release/bundle"
 mkdir -p "$OUTPUT_DIR"
 
 # Copy build output for packaging

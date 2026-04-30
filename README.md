@@ -225,6 +225,23 @@ bash scripts/build_macos.sh aarch64
 
 Output: AppImage, deb, rpm, tar.gz (Linux) and zip (macOS).
 
+### Local Docker Builds
+
+```bash
+# Android release APK (optionally pass signing env vars)
+bash scripts/docker_build_android.sh
+
+# Linux x64 packages
+bash scripts/docker_build_linux.sh x86_64
+```
+
+Notes:
+- The Docker workflow currently supports Android and Linux x64 only.
+- Windows Docker packaging can be explored later.
+- macOS and iOS remain GitHub Actions-only because they require native Apple toolchains.
+- The Android Docker image generates `android/local.properties` inside the container so host SDK paths are not required.
+- Outputs land under `docker_build/`: `docker_build/android/outputs/apk/` (APKs) and `docker_build/linux/x86_64/outputs/packages/` (AppImage/deb/tar.gz).
+
 ### CI/CD
 
 GitHub Actions builds all platforms on tag push (`v*`) and creates a release automatically.

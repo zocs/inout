@@ -47,6 +47,10 @@ app.*.map.json
 # Build outputs
 build/
 dist/
+.docker-cache/
+docker_build/*
+!docker_build/.gitkeep
+android/.kotlin/
 *.exe
 *.apk
 *.aab
@@ -54,6 +58,7 @@ dist/
 
 # Pre-compiled dufs binaries (built from source in CI)
 assets/dufs/dufs-*
+assets/dufs/libdufs-*
 android/app/src/main/jniLibs/*/libdufs.so
 ios/Frameworks/dufs
 

@@ -28,6 +28,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.5'
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-aarch64-linux-android-${{ hashFiles('scripts/build_dufs.sh') }}
+          restore-keys: |
+            cargo-aarch64-linux-android-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -70,6 +79,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.5'
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-x86_64-pc-windows-msvc-${{ hashFiles('scripts/build_dufs.sh') }}
+          restore-keys: |
+            cargo-x86_64-pc-windows-msvc-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -104,6 +122,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.5'
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-x86_64-unknown-linux-gnu-${{ hashFiles('scripts/build_dufs.sh') }}
+          restore-keys: |
+            cargo-x86_64-unknown-linux-gnu-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -132,6 +159,15 @@ jobs:
           echo "$HOME/flutter/bin/cache/dart-sdk/bin" >> "$GITHUB_PATH"
           flutter precache --linux
           flutter config --no-analytics
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-aarch64-unknown-linux-gnu-${{ hashFiles('scripts/build_dufs.sh') }}
+          restore-keys: |
+            cargo-aarch64-unknown-linux-gnu-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -157,6 +193,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.5'
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-aarch64-apple-darwin-${{ hashFiles('scripts/build_dufs.sh') }}
+          restore-keys: |
+            cargo-aarch64-apple-darwin-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -176,6 +221,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.5'
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-aarch64-apple-ios-${{ hashFiles('scripts/build_dufs.sh') }}
+          restore-keys: |
+            cargo-aarch64-apple-ios-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:

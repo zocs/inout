@@ -47,6 +47,10 @@ fi
 
 cd "$DUFS_SRC"
 
+if command -v rustup >/dev/null 2>&1; then
+  rustup show active-toolchain >/dev/null 2>&1 || rustup default stable
+fi
+
 case "$PLATFORM" in
   android-arm64)
     RUST_TARGET="aarch64-linux-android"
