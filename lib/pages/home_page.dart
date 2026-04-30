@@ -651,6 +651,14 @@ class _HomePageState extends State<HomePage>
           _isServerTransitioning = false;
           _isStoppingServer = false;
         });
+        final service = context.read<DufsService>();
+        final notice = service.portInfo;
+        if (notice != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(notice), duration: const Duration(seconds: 4)),
+          );
+          service.clearPortInfo();
+        }
       }
     }
   }

@@ -38,11 +38,19 @@ class DufsService extends ChangeNotifier {
   String? get serverUrl => _serverUrl;
   String? get localIp => _localIp;
   String? get error => _error;
+  String? get portInfo => _portInfo;
   int get totalRequests => _totalRequests;
   String? get lastActivity => _lastActivity;
   List<String> get allAddresses => _allAddresses;
   List<String> get allInterfaceNames => _allInterfaceNames;
   List<TransferLog> get transferLogs => List.unmodifiable(_transferLogs);
+
+  /// Transient one-shot notice ("原端口 5000 被占用，已切到 5001"). UI consumes
+  /// via [portInfo] then calls [clearPortInfo] to dismiss.
+  String? _portInfo;
+  void clearPortInfo() {
+    _portInfo = null;
+  }
 
   void _log(String msg) {
     debugPrint(msg);
@@ -94,6 +102,42 @@ class DufsService extends ChangeNotifier {
 
   /// 检查端口是否被占用（公共方法，用于恢复状态检测）
   Future<bool> isPortInUse(int port) async => !(await _isPortAvailable(port));
+
+  /// Resolve the actually-bindable port given a requested one.
+  ///
+  /// Strategy:
+  ///   1. Try the requested port. If free, use it.
+  ///   2. If busy, try to identify and stop a leftover dufs/inout process
+  ///      that is holding it (same user only). Re-probe.
+  ///   3. If still busy, scan +1, +2, ... up to +9. Return the first free.
+  ///   4. None free in range → throw.
+  ///
+  /// Sets [_portInfo] with a user-facing message when an automatic decision
+  /// was made (orphan killed, port bumped). UI is expected to surface and
+  /// then [clearPortInfo].
+  Future<int> _resolvePort(int requestedPort) async {
+    const maxBump = 9;
+    if (await _isPortAvailable(requestedPort)) return requestedPort;
+
+    _log('Port $requestedPort in use, attempting orphan cleanup...');
+    await _killOrphanDufs(requestedPort);
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (await _isPortAvailable(requestedPort)) {
+      _portInfo = '检测到残留 dufs 进程，已结束并使用端口 $requestedPort';
+      return requestedPort;
+    }
+
+    for (var bump = 1; bump <= maxBump; bump++) {
+      final candidate = requestedPort + bump;
+      if (await _isPortAvailable(candidate)) {
+        _portInfo = '原端口 $requestedPort 被其他程序占用，已切换到 $candidate';
+        return candidate;
+      }
+    }
+    throw Exception(
+      '端口 $requestedPort..${requestedPort + maxBump} 全部被占用，请手动指定一个空闲端口',
+    );
+  }
 
   /// 强制清理占用端口的 dufs 孤儿进程
   Future<void> killOrphanOnPort(int port) async {
@@ -235,20 +279,18 @@ class DufsService extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    // Check port availability, kill orphan dufs if needed
-    if (!await _isPortAvailable(config.port)) {
-      _log('Port ${config.port} in use, attempting to kill orphan dufs...');
-      await _killOrphanDufs(config.port);
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (!await _isPortAvailable(config.port)) {
-        // In FFI mode, let the FFI binding retry handle TIME_WAIT — don't block here
-        if (!_useFfi) {
-          _error = '端口 ${config.port} 已被占用，请更换端口';
-          notifyListeners();
-          return;
-        }
-        _log('Port still in use, but FFI will retry binding...');
-      }
+    // Resolve port: kill orphan dufs, fall back to next free port if needed.
+    _portInfo = null;
+    try {
+      config.port = await _resolvePort(config.port);
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return;
+    }
+    if (_portInfo != null) {
+      _log(_portInfo!);
+      notifyListeners();
     }
     try {
       _error = null;
