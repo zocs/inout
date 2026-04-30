@@ -9,6 +9,16 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    # Docker wrappers rsync the repo here per platform; analyzing those copies
+    # produces fake errors (no resolved deps) and balloons the issue count.
+    - docker_build/**
+    # Local cargo build outputs from build_dufs.sh.
+    - assets/dufs/**
+    # Build-time scripts (splash generator, etc.) — not app code.
+    - scripts/**.dart
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
