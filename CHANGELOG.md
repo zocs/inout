@@ -3,6 +3,28 @@
 > 所有版本均可在 [GitHub Releases](https://github.com/zocs/inout/releases) 下载。
 > All versions available at [GitHub Releases](https://github.com/zocs/inout/releases).
 
+## [v0.3.4](https://github.com/zocs/inout/releases/tag/v0.3.4) (2026-05-02)
+
+**中文：**
+- 🔒 修复 Android 端 dufs 启动日志把 `--auth user:pass@/:rw` 直接打到 logcat（任何 adb client 或同 user 应用都能读取用户密码）
+- 🐛 修复应用内"关于"页版本号显示与 `pubspec.yaml` 不一致——改为 runtime 从 `package_info_plus` 读，发版不再需要手动同步 `lib/app.dart::appVersion`
+- 🐛 修复 secure_storage 凭据迁移逻辑：之前每次 load 都会用 SharedPreferences 里的 legacy auth 覆写 secure_storage 里更新过的凭据（用户改密码后下次启动密码被改回去）
+- 🐛 修复端口冲突自动 +1 后，用户配置的原始端口被持久化覆盖：现在用户偏好端口和实际运行端口分开记录，下次启动仍尝试原端口
+- 🐛 修复 Android 启动服务的 race：之前 Dart 端固定等 500ms 就查询服务状态，但 Kotlin 的 socket probe 最多需要 5s 才完成，导致服务实际跑起来但 UI 报"启动失败"。现改为最多轮询 6s
+- ✨ 切换语言立即生效，无需重启 app（之前必须重启才能看到 UI 文案变化）
+- 🏗️ NSIS Windows 安装包改为从 CI 命令行注入版本号（`/DAPP_VERSION=...`），下次发版不会再因为忘改 .nsi 内的硬编码版本号而上传失败
+
+**English:**
+- 🔒 Fixed Android dufs startup log writing the `--auth user:pass@/:rw` argument verbatim to logcat (any adb client or same-uid app could read user credentials)
+- 🐛 Fixed in-app About page version drifting from `pubspec.yaml` — now read at runtime from `package_info_plus`, so releases no longer require manual sync of `lib/app.dart::appVersion`
+- 🐛 Fixed secure_storage credential migration: previous load() would re-write the legacy SharedPreferences auth into secure_storage every run, overwriting any newer credential the user had set (effectively reverting password changes on next launch)
+- 🐛 Fixed port-conflict auto-bump persisting the bumped port over the user's preferred port: user preference and actual-runtime port are now tracked separately
+- 🐛 Fixed an Android start race: Dart used to wait a fixed 500ms before checking service status, but the Kotlin socket probe takes up to 5s — UI would falsely report "start failed" while the service actually came up. Now polls up to 6s
+- ✨ Language switch in Settings now takes effect immediately (previously required app restart)
+- 🏗️ NSIS Windows installer now reads APP_VERSION from the CI command line (`/DAPP_VERSION=...`) instead of a hardcoded `.nsi` constant — no more silent missing setup.exe when the .nsi version isn't manually bumped
+
+---
+
 ## [v0.3.3](https://github.com/zocs/inout/releases/tag/v0.3.3) (2026-05-01)
 
 **中文：**

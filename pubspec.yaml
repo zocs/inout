@@ -1,6 +1,6 @@
 name: inout
 description: "inout - 轻点一下，文件分享即刻在线。基于 dufs 的图形界面版本。"
-version: 0.3.3+33
+version: 0.3.4+34
 license: MIT
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -49,6 +49,7 @@ dependencies:
   tray_manager: ^0.5.2
   ffi: ^2.1.4
   flutter_secure_storage: ^9.2.2
+  package_info_plus: ^8.0.2
 
 dev_dependencies:
   flutter_test:
