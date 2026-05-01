@@ -316,13 +316,14 @@ jobs:
 
             | Platform | Files | Status |
             |----------|-------|--------|
-            | Android | `.apk` | ✅ |
+            | Android arm64 | `.apk` | ✅ |
             | Windows x64 | `.zip` (portable) + `.exe` (installer) | ✅ |
-            | macOS ARM64 | `.zip` (app bundle) | ⚠️ 未签名，未实机测试 |
             | Linux x64 | `.AppImage` + `.deb` + `.tar.gz` | ✅ |
             | Linux ARM64 | `.AppImage` + `.deb` + `.tar.gz` | ✅ |
+            | macOS ARM64 | `.zip` (app bundle) | ⚠️ 仅编译测试，**未签名、未实机测试** |
+            | iOS arm64 | `.zip` (app bundle, no codesign) | ⚠️ 仅编译测试，**未签名、未实机测试** |
 
-            > 🍎 macOS 未签名：`xattr -cr inout.app`
+            > 🍎 macOS 未签名：解压后执行 `xattr -cr inout.app` 去除隔离属性。
           files: |
             artifacts/**/*.AppImage
             artifacts/**/*.deb
