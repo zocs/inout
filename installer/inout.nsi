@@ -3,7 +3,9 @@ Unicode true
 SetCompressor /SOLID lzma
 
 !define APP_NAME "inout"
-!define APP_VERSION "0.3.2"
+!ifndef APP_VERSION
+  !define APP_VERSION "0.0.0"
+!endif
 !define APP_PUBLISHER "zocs"
 !define APP_URL "https://github.com/zocs/inout"
 !define APP_EXE "inout.exe"
