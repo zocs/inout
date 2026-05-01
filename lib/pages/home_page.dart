@@ -18,6 +18,7 @@ class HomePage extends StatefulWidget {
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
   final ValueChanged<String> onColorChanged;
+  final ValueChanged<String> onLanguageChanged;
   final VoidCallback? onCloseRequested;
 
   const HomePage({
@@ -26,6 +27,7 @@ class HomePage extends StatefulWidget {
     required this.themeMode,
     required this.onThemeModeChanged,
     required this.onColorChanged,
+    required this.onLanguageChanged,
     this.onCloseRequested,
   });
 
@@ -944,7 +946,12 @@ class _HomePageState extends State<HomePage>
             final ifaceName = idx < service.allInterfaceNames.length
                 ? service.allInterfaceNames[idx]
                 : '';
-            final url = 'http://$ip:${_config.port}';
+            // Use the actually-bound port from the service, not the user's
+            // configured port — they may differ when conflict auto-bumped.
+            final urlPort = service.activePort != 0
+                ? service.activePort
+                : _config.port;
+            final url = 'http://$ip:$urlPort';
             final isDefault = idx == 0;
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1463,6 +1470,7 @@ class _HomePageState extends State<HomePage>
         themeMode: widget.themeMode,
         onThemeModeChanged: widget.onThemeModeChanged,
         onColorChanged: widget.onColorChanged,
+        onLanguageChanged: widget.onLanguageChanged,
       ),
     ];
 

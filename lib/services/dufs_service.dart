@@ -31,6 +31,9 @@ class DufsService extends ChangeNotifier {
   /// 网卡名称列表，与 allAddresses 一一对应
   List<String> _allInterfaceNames = [];
 
+  /// 实际绑定的端口（可能因冲突自动 +1，与 ServerConfig.port 解耦）
+  int _activePort = 0;
+
   /// 传输日志（最新的在前）
   final List<TransferLog> _transferLogs = [];
 
@@ -39,6 +42,11 @@ class DufsService extends ChangeNotifier {
   String? get localIp => _localIp;
   String? get error => _error;
   String? get portInfo => _portInfo;
+  /// Port the running server is actually bound to. Differs from the
+  /// user-configured `ServerConfig.port` when `_resolvePort` had to bump
+  /// the port to find a free one. UI should prefer this for URLs while
+  /// keeping ServerConfig.port as the user's stored preference.
+  int get activePort => _activePort;
   int get totalRequests => _totalRequests;
   String? get lastActivity => _lastActivity;
   List<String> get allAddresses => _allAddresses;
@@ -280,14 +288,18 @@ class DufsService extends ChangeNotifier {
       return;
     }
     // Resolve port: kill orphan dufs, fall back to next free port if needed.
+    // _resolvePort returns the actually-bindable port WITHOUT mutating
+    // config.port, so the user's preference survives across runs.
     _portInfo = null;
+    final int actualPort;
     try {
-      config.port = await _resolvePort(config.port);
+      actualPort = await _resolvePort(config.port);
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();
       return;
     }
+    _activePort = actualPort;
     if (_portInfo != null) {
       _log(_portInfo!);
       notifyListeners();
@@ -308,28 +320,42 @@ class DufsService extends ChangeNotifier {
       }
       if (Platform.isAndroid) {
         // Android: start dufs via Native Service (process lives in Service, not Dart)
-        final args = _buildArgs(config);
+        final args = _buildArgs(config, actualPort);
         await _ch.invokeMethod('startForegroundService', {
-          'port': config.port,
+          'port': actualPort,
           'path': config.path,
           'args': args,
         });
-        // Startup verification: wait for Native Service to start dufs, then confirm
-        await Future.delayed(const Duration(milliseconds: 500));
-        final info = await _ch.invokeMethod<Map>('getServiceInfo');
-        if (info == null || info['isRunning'] != true) {
-          final svcError = info?['error'] as String? ?? '';
+        // Poll service status. Kotlin side runs a TCP-connect probe that can
+        // take up to ~5s on slow devices; a fixed 500ms wait races with that
+        // and falsely reports failure. Poll every 200ms up to 6s.
+        Map? info;
+        var serviceFailed = false;
+        for (var i = 0; i < 30; i++) {
+          await Future.delayed(const Duration(milliseconds: 200));
+          info = await _ch.invokeMethod<Map>('getServiceInfo');
+          if (info?['isRunning'] == true) break;
+          final svcError = (info?['error'] as String?) ?? '';
+          if (svcError.isNotEmpty) {
+            // Kotlin reported a definitive failure — fail fast.
+            serviceFailed = true;
+            break;
+          }
+        }
+        if (serviceFailed || info == null || info['isRunning'] != true) {
+          final svcError = (info?['error'] as String?) ?? '';
           _error = '服务启动失败${svcError.isNotEmpty ? ': $svcError' : ''}';
           _isRunning = false;
+          _activePort = 0;
           notifyListeners();
           return;
         }
       } else if (Platform.isIOS) {
         // iOS: start dufs as child process (not signed for FFI)
-        await _startDufsProcess(config);
+        await _startDufsProcess(config, actualPort);
       } else {
         // Desktop (Linux/macOS/Windows): use FFI
-        await _startDufsFfi(config);
+        await _startDufsFfi(config, actualPort);
       }
 
       _isRunning = true;
@@ -352,7 +378,7 @@ class DufsService extends ChangeNotifier {
         _allAddresses.add('127.0.0.1');
         _allInterfaceNames.add('Local');
       }
-      _serverUrl = 'http://${_allAddresses.first}:${config.port}';
+      _serverUrl = 'http://${_allAddresses.first}:$actualPort';
       _log('server: $_serverUrl, all: $_allAddresses');
       // Start polling log file for transfer records
       _startLogFilePolling();
@@ -360,14 +386,15 @@ class DufsService extends ChangeNotifier {
     } catch (e) {
       _error = 'Start failed: $e';
       _isRunning = false;
+      _activePort = 0;
       notifyListeners();
       _log('failed: $e');
     }
   }
 
   // ==================== Build dufs CLI args ====================
-  List<String> _buildArgs(ServerConfig c) {
-    final args = <String>['-b', '0.0.0.0', '-p', '${c.port}'];
+  List<String> _buildArgs(ServerConfig c, int port) {
+    final args = <String>['-b', '0.0.0.0', '-p', '$port'];
     if (!c.readonly) {
       if (c.allowUpload) args.add('--allow-upload');
       if (c.allowDelete) args.add('--allow-delete');
@@ -406,13 +433,13 @@ class DufsService extends ChangeNotifier {
   String _logFileRemainder = '';
 
   // ==================== Start dufs via FFI (desktop) ====================
-  Future<void> _startDufsFfi(ServerConfig config) async {
+  Future<void> _startDufsFfi(ServerConfig config, int port) async {
     if (!_dufsFfi.isLoaded) {
       final libPath = await resolveDufsLibPath();
       _log('Loading dufs FFI library: $libPath');
       _dufsFfi.load(libPath);
     }
-    final args = _buildArgs(config);
+    final args = _buildArgs(config, port);
     final argv = ['dufs', ...args];
     _log('dufs ffi start: ${args.join(' ')}');
     final ret = _dufsFfi.start(argv);
@@ -426,13 +453,13 @@ class DufsService extends ChangeNotifier {
   }
 
   // ==================== Start dufs process (iOS) ====================
-  Future<void> _startDufsProcess(ServerConfig config) async {
+  Future<void> _startDufsProcess(ServerConfig config, int port) async {
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     final binPath = p.join(exeDir, 'dufs');
     if (!await File(binPath).exists()) {
       throw Exception('dufs 服务组件缺失，请重新安装应用。路径: $binPath');
     }
-    final args = _buildArgs(config);
+    final args = _buildArgs(config, port);
     final workDir = config.shareSingleFile
         ? p.dirname(config.path)
         : config.path;
@@ -557,6 +584,7 @@ class DufsService extends ChangeNotifier {
     }
     _isRunning = false;
     _serverUrl = null;
+    _activePort = 0;
     _totalRequests = 0;
     _lastActivity = null;
     _allAddresses = [];
@@ -577,6 +605,7 @@ class DufsService extends ChangeNotifier {
       final info = await _ch.invokeMethod<Map>('getServiceInfo');
       if (info != null && info['isRunning'] == true) {
         final port = info['port'] as int? ?? 0;
+        _activePort = port;
         await _prepareLogFile();
         _totalRequests = 0;
         _lastActivity = null;

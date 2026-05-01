@@ -4,7 +4,10 @@ import 'pages/home_page.dart';
 import 'pages/setup_wizard_page.dart';
 import 'pages/splash_page.dart';
 
-const appVersion = '0.3.2';
+/// Populated from `PackageInfo.fromPlatform()` in `main.dart` before runApp.
+/// Keep this mutable (not const) so the displayed version always matches
+/// pubspec.yaml without manual sync.
+String appVersion = '0.0.0';
 
 const Map<String, Color> presetColors = {
   'coral': Color(0xFFFF6B5A),
@@ -19,9 +22,11 @@ class App extends StatelessWidget {
   final ServerConfig config;
   final ThemeMode themeMode;
   final String colorScheme;
+  final String language;
   final bool setupDone;
   final ValueChanged<ThemeMode> onThemeModeChanged;
   final ValueChanged<String> onColorChanged;
+  final ValueChanged<String> onLanguageChanged;
   final VoidCallback onSetupDone;
   final VoidCallback? onCloseRequested;
   final GlobalKey<NavigatorState>? navigatorKey;
@@ -31,9 +36,11 @@ class App extends StatelessWidget {
     required this.config,
     required this.themeMode,
     required this.colorScheme,
+    required this.language,
     required this.setupDone,
     required this.onThemeModeChanged,
     required this.onColorChanged,
+    required this.onLanguageChanged,
     required this.onSetupDone,
     this.onCloseRequested,
     this.navigatorKey,
@@ -47,7 +54,7 @@ class App extends StatelessWidget {
       navigatorKey: navigatorKey,
       title: 'inout',
       debugShowCheckedModeBanner: false,
-      locale: _localeFromCode(config.language),
+      locale: _localeFromCode(language),
       themeMode: themeMode,
       theme: _buildTheme(
         ColorScheme.fromSeed(
@@ -65,6 +72,7 @@ class App extends StatelessWidget {
                 themeMode: themeMode,
                 onThemeModeChanged: onThemeModeChanged,
                 onColorChanged: onColorChanged,
+                onLanguageChanged: onLanguageChanged,
                 onCloseRequested: onCloseRequested,
               )
             : SetupWizardPage(

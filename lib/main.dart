@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -9,6 +10,15 @@ import 'services/dufs_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Pull the version from the platform package metadata so it always tracks
+  // pubspec.yaml without manual sync. (See lib/app.dart::appVersion.)
+  try {
+    final pkgInfo = await PackageInfo.fromPlatform();
+    appVersion = pkgInfo.version;
+  } catch (_) {
+    // Fallback already covered by `appVersion = '0.0.0'` initializer.
+  }
 
   // Desktop: frameless window + system tray
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
@@ -48,6 +58,7 @@ class InoutApp extends StatefulWidget {
 class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
   late ThemeMode _themeMode;
   late String _colorScheme;
+  late String _language;
   late bool _setupDone;
   final _navigatorKey = GlobalKey<NavigatorState>();
 
@@ -56,6 +67,7 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
     super.initState();
     _themeMode = _themeModeFromString(widget.config.themeMode);
     _colorScheme = widget.config.colorScheme;
+    _language = widget.config.language;
     _setupDone = widget.config.setupDone;
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.addListener(this);
@@ -196,6 +208,14 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
     widget.config.save();
   }
 
+  void _onLanguageChanged(String code) {
+    setState(() {
+      _language = code;
+      widget.config.language = code;
+    });
+    widget.config.save();
+  }
+
   void _onSetupDone() {
     setState(() {
       _setupDone = true;
@@ -208,9 +228,11 @@ class _InoutAppState extends State<InoutApp> with TrayListener, WindowListener {
       config: widget.config,
       themeMode: _themeMode,
       colorScheme: _colorScheme,
+      language: _language,
       setupDone: _setupDone,
       onThemeModeChanged: _onThemeChanged,
       onColorChanged: _onColorChanged,
+      onLanguageChanged: _onLanguageChanged,
       onSetupDone: _onSetupDone,
       onCloseRequested: () => onWindowClose(),
       navigatorKey: _navigatorKey,

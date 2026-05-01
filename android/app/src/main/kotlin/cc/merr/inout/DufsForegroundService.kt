@@ -87,7 +87,24 @@ class DufsForegroundService : Service() {
             val fullArgs = mutableListOf(dufsBin)
             fullArgs.addAll(args)
 
-            Log.d(TAG, "Starting dufs: ${fullArgs.joinToString(" ")}")
+            // Redact --auth credential before logging — logcat is world-readable
+            // on Android (any same-uid app or adb client can read it).
+            val redactedArgs = mutableListOf<String>()
+            var skipNext = false
+            for (a in fullArgs) {
+                when {
+                    skipNext -> {
+                        redactedArgs.add("***@/:rw")
+                        skipNext = false
+                    }
+                    a == "--auth" -> {
+                        redactedArgs.add(a)
+                        skipNext = true
+                    }
+                    else -> redactedArgs.add(a)
+                }
+            }
+            Log.d(TAG, "Starting dufs: ${redactedArgs.joinToString(" ")}")
 
             val workingDir = File(path).let { target ->
                 if (target.isDirectory) target else target.parentFile ?: filesDir

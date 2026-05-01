@@ -11,6 +11,7 @@ class SettingsPage extends StatefulWidget {
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
   final ValueChanged<String> onColorChanged;
+  final ValueChanged<String> onLanguageChanged;
 
   const SettingsPage({
     super.key,
@@ -19,6 +20,7 @@ class SettingsPage extends StatefulWidget {
     required this.themeMode,
     required this.onThemeModeChanged,
     required this.onColorChanged,
+    required this.onLanguageChanged,
   });
 
   @override
@@ -430,10 +432,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: Theme.of(context).colorScheme.primary,
                     )
                   : null,
-              onTap: () async {
-                setState(() => widget.config.language = lang['code']!);
-                await widget.config.save();
-                widget.onConfigChanged();
+              onTap: () {
+                // Defer to the parent so MaterialApp's locale rebuilds
+                // immediately; the parent handler also persists the change.
+                widget.onLanguageChanged(lang['code']!);
+                setState(() {});
               },
             );
           }),

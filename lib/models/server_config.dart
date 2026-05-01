@@ -136,8 +136,15 @@ class ServerConfig {
     final legacyAuth = json?['auth'] as String?;
     final secureAuth = await _secureStorage.read(key: _authStorageKey);
     config.auth = secureAuth ?? legacyAuth;
-    if (legacyAuth != null && legacyAuth.isNotEmpty) {
+    // Only migrate legacy → secure storage when secure storage doesn't already
+    // have a value. Otherwise we'd overwrite a fresh credential set in the new
+    // version with a stale one left in SharedPreferences.
+    if (secureAuth == null &&
+        legacyAuth != null &&
+        legacyAuth.isNotEmpty) {
       await _secureStorage.write(key: _authStorageKey, value: legacyAuth);
+      // Strip the legacy 'auth' field from SharedPreferences so we don't keep
+      // re-migrating on every load (and so the credential isn't double-stored).
       await prefs.setString('server_config', jsonEncode(config.toJson()));
     }
     return config;
