@@ -250,13 +250,15 @@ class _HomePageState extends State<HomePage>
     String? result;
     var pickerFailed = false;
     // Linux 上 file_picker 的 getDirectoryPath 走 XDG portal
-    // OpenFile + directory:true，部分 portal 后端忽略该选项，
-    // 弹出文件选择器而非目录选择器（按钮「打开」而非「选择」）。
+    // OpenFile + directory:true，部分 portal 后端（尤其 Ubuntu 18.04 的
+    // xdg-desktop-portal-gtk）忽略该选项，弹出文件选择器而非目录选择器。
     // 优先用桌面环境原生工具（zenity/kdialog），file_picker 兜底。
     if (Platform.isLinux) {
-      final (path, toolUsed) = await _pickDirLinuxNative();
-      // 工具已交互（选中或取消）即结束，不再回退 file_picker
-      if (toolUsed) {
+      final (path, handled) = await _pickDirLinuxNative();
+      // handled=true 表示原生工具已给出确定结果（选中或明确取消），
+      // 不再回退 file_picker；handled=false 表示无可用原生工具或工具
+      // 异常退出（崩溃/无 display），继续走 file_picker 兜底。
+      if (handled) {
         if (path != null) {
           await _applyDirPath(path);
         }
@@ -264,7 +266,7 @@ class _HomePageState extends State<HomePage>
       }
       result = path;
     }
-    // 非 Linux，或 Linux 无原生工具可用 → file_picker
+    // 非 Linux，或 Linux 无可用原生工具 → file_picker
     try {
       result ??= await FilePicker.platform.getDirectoryPath();
     } catch (e) {
@@ -287,7 +289,8 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _applyDirPath(String path) async {
-    // 若 portal 返回文件路径而非目录（directory:true 被忽略），取父目录
+    // 若 portal 返回文件路径而非目录（directory:true 被忽略），取父目录。
+    // 注意：这是兜底猜测，原生工具路径下通常不会触发。
     final dir = await Directory(path).exists() ? path : p.dirname(path);
     setState(() {
       _config.path = dir;
@@ -296,26 +299,57 @@ class _HomePageState extends State<HomePage>
     await _saveConfig();
   }
 
-  /// Linux 遍历式尝试原生目录选择器。
-  /// 返回 (路径, 工具是否已交互)：工具存在即已交互（取消时路径为
-  /// null，也视为已处理，不再回退 file_picker）；全部工具不可用才
-  /// 返回 (null, false) 由调用方走 file_picker。
+  /// Linux 遍历式尝试原生目录选择器（zenity → kdialog）。
+  /// 返回 (路径, 是否已处理)：
+  ///   - 选中目录 → (path, true)
+  ///   - 用户明确取消（exit 1）→ (null, true)，不再回退 file_picker
+  ///   - 工具不存在 / 异常退出（崩溃、无 display 等 exit>=2）→
+  ///     (null, false)，由调用方回退 file_picker
   Future<(String?, bool)> _pickDirLinuxNative() async {
-    final candidates = [
-      ['zenity', '--file-selection', '--directory', '--title=选择分享目录'],
-      ['kdialog', '--getexistingdirectory', '--title=选择分享目录'],
+    final title = l10n.t('home.selectDir');
+    // AppImage 通过 apprun hook 注入了自带的 GTK/GLib 库路径
+    // （LD_LIBRARY_PATH / GTK_PATH / GSETTINGS_SCHEMA_DIR 等）。这些变量
+    // 会被子进程继承，导致系统 zenity/kdialog 加载到版本不匹配的 GTK
+    // 而崩溃或异常退出。这里显式清洗环境，让原生工具用系统库运行。
+    final env = Map<String, String>.from(Platform.environment)
+      ..remove('LD_LIBRARY_PATH')
+      ..remove('LD_PRELOAD')
+      ..remove('GTK_PATH')
+      ..remove('GTK_DATA_PREFIX')
+      ..remove('GSETTINGS_SCHEMA_DIR')
+      ..remove('GIO_MODULE_DIR')
+      ..remove('XDG_DATA_DIRS')
+      ..remove('FONTCONFIG_PATH')
+      ..remove('FONTCONFIG_FILE');
+    final candidates = <List<String>>[
+      ['zenity', '--file-selection', '--directory', '--title=$title'],
+      // kdialog 的 --getexistingdirectory 会把后一个 arg 当作起始目录，
+      // 因此 --title 必须放在 --getexistingdirectory 之前。
+      [
+        'kdialog',
+        '--title',
+        title,
+        '--getexistingdirectory',
+        Platform.environment['HOME'] ?? '/',
+      ],
     ];
     for (final cmd in candidates) {
+      ProcessResult r;
       try {
-        final r = await Process.run(cmd[0], cmd.skip(1).toList());
-        final path = (r.stdout as String).trim();
-        return (
-          r.exitCode == 0 && path.isNotEmpty ? path : null,
-          true,
+        r = await Process.run(
+          cmd[0],
+          cmd.sublist(1),
+          environment: env,
+          includeParentEnvironment: false,
         );
       } catch (_) {
-        // 工具不存在/启动失败 → 尝试下一个
+        // 二进制不存在（ENOENT）→ 尝试下一个
+        continue;
       }
+      final path = (r.stdout as String).trim();
+      if (r.exitCode == 0 && path.isNotEmpty) return (path, true); // 选中
+      if (r.exitCode == 1) return (null, true); // 明确取消
+      // exit >= 2：崩溃 / 无 display 等异常 → 视为未处理，回退 file_picker
     }
     return (null, false);
   }

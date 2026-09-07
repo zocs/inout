@@ -1,0 +1,1 @@
+Fixed the Ubuntu 18.04 compat build still showing a file picker when choosing a share directory; directory selection now works correctly

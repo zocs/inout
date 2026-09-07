@@ -3,6 +3,14 @@
 > 所有版本均可在 [GitHub Releases](https://github.com/zocs/fileinfra/releases) 下载。
 > All versions available at [GitHub Releases](https://github.com/zocs/fileinfra/releases).
 
+## [v0.5.11](https://github.com/zocs/fileinfra/releases/tag/v0.5.11) (2026-09)
+
+**中文：**
+- 🐛 修复 Ubuntu 18.04 兼容版「选择分享目录」仍弹出文件选择器的问题：v0.5.10 引入的 zenity/kdialog 原生选择器在该环境下因 kdialog 参数顺序、AppImage 环境变量泄漏、以及工具异常退出被误判为「已取消」而失效；现已修正参数顺序、启动原生工具前清洗子进程环境，并按退出码区分「选中/取消/异常」，异常时正确回退。目录选择器标题改走多语言。
+
+**English：**
+- 🐛 Fixed the Ubuntu 18.04 compat build still showing a file picker when choosing a share directory: the zenity/kdialog native choosers added in v0.5.10 failed there due to wrong kdialog argument order, AppImage environment leaking into the child process, and a tool erroring out being mistaken for a cancel. Argument order is fixed, the child environment is sanitized before launching a native tool, and exit codes now distinguish select/cancel/error (falling back correctly on error). The chooser title is localized.
+
 ## [v0.5.10](https://github.com/zocs/fileinfra/releases/tag/v0.5.10) (2026-09-03)
 
 **中文：**
